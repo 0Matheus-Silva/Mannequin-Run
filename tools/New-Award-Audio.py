@@ -47,11 +47,8 @@ if voice.exists():
     active=[i for i,v in enumerate(pcm) if abs(v)>peak*.025]
     if active:
         pcm=pcm[max(0,active[0]-int(rate*.025)):min(len(pcm),active[-1]+int(rate*.06))]
-        target=min(len(pcm),int(rate*1.7))
-        result=array.array('h')
-        for i in range(target):
-            position=i*(len(pcm)-1)/max(1,target-1);index=int(position);fraction=position-index
-            result.append(int(pcm[index]*(1-fraction)+pcm[min(index+1,len(pcm)-1)]*fraction))
+        # Preserve pitch and natural phrasing; trim silence only.
+        result=pcm
         with wave.open(str(voice),'wb') as output:
             output.setparams((1,2,rate,0,'NONE','not compressed'));output.writeframes(result.tobytes())
         print('Chest narration trimmed to',round(len(result)/rate,3),'seconds for lip/tongue synchronization.')

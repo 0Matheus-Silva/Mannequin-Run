@@ -9,7 +9,7 @@ export class Mannequin {
     this.time=0;this.phase=0;this.runBlend=0;this.airBlend=0;this.slideBlend=0;this.crashBlend=0;this.impactTime=0;this.landed=false;
     this.animationState='menu_idle';this.gaze=new THREE.Vector3();this.wasAirborne=false;this.landing=0;
   }
-  resetPose(){this.runBlend=0;this.airBlend=0;this.slideBlend=0;this.crashBlend=0;this.phase=0;this.impactTime=0;this.landing=0;this.wasAirborne=false;}
+  resetPose(){this.body.visible=true;this.rollBall.visible=false;this.rollBall.scale.setScalar(0);this.runBlend=0;this.airBlend=0;this.slideBlend=0;this.crashBlend=0;this.phase=0;this.impactTime=0;this.landing=0;this.wasAirborne=false;}
   update(dt,running,motion=null,crashed=false,options={}){
     this.time+=dt;
     const transition=options.transition??null;
@@ -58,6 +58,12 @@ export class Mannequin {
     if(dt>0){const airborne=(motion?.y??0)>.01;if(this.wasAirborne&&!airborne)this.landing=.18;this.wasAirborne=airborne;this.landing=Math.max(0,this.landing-dt);}
     const land=Math.sin(Math.PI*this.landing/.18);this.body.position.y-=land*.035;this.torso.rotation.x+=land*.07;this.legs.forEach(leg=>{leg.joint.rotation.x-=land*.25;});
     this.glow.emissiveIntensity=.75+(motion?.y>0?.2:0)+Math.sin(t*.7)*.06;
+    const rolling=running&&!crashed&&(motion?.slideTime??0)>0;
+    this.body.visible=!rolling;
+    // Zero scale also keeps generic world bounds faithful to the visible silhouette.
+    if(rolling){this.body.scale.setScalar(0);this.body.position.set(0,0,0);}
+    this.rollBall.visible=rolling;this.rollBall.scale.setScalar(rolling?1:0);
+    if(rolling){this.animationState='slide_roll';this.rollBall.rotation.set(-t*22,Math.sin(t*8)*.12,0);}
     if(crashed){
       this.impactTime+=dt;const fall=ease(.12,1.1,this.impactTime);
       this.body.rotation.z=-fall*Math.PI*.48;this.body.rotation.x=-.12;

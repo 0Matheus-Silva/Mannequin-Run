@@ -26,5 +26,6 @@ if(['distant','facade','arrival','entrance','ceremony','victory','credits','jump
 if(view==='menu'){for(let i=0;i<15;i++)game.player.update(1/60,false,game.motion,false,{cameraPosition:game.camera.position});game.camera.lookAt(game.target);}
 if(view==='settings')doc.querySelector('#settings-open').click();
 if(view==='chapters')doc.querySelector('#chapters-open').click();
+if(view==='roll'){game.motion.slide();game.motion.update(.2);game.player.update(.2,true,game.motion);game.camera.position.set(1.7,1.7,3);game.target.set(0,.48,0);game.camera.lookAt(game.target);}
 game.ui.update(game.session);game.render();
 </script></body></html>

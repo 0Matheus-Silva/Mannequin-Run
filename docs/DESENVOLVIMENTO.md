@@ -108,3 +108,16 @@ Atualização autorizada para GitHub: grito prolongado do baú com “Aaaaah! Ai
 ## Homologação complementar
 
 Continuam disponíveis para avaliação humana as sessões prolongadas, sensação dos controles, audição, desempenho, telas cheias e janelas nas resoluções recomendadas. O jogo já foi publicado no GitHub Pages mediante autorização posterior; as restrições e pendências de publicação dos registros antigos são históricas.
+
+
+## Referência física atualizada e deslize em bola — 14/11/2026
+
+O protagonista recebeu tórax claro, máscara respiratória com dois visores e filtros laterais ciano, gabinete com placa/fan e frisos verdes, capuz, jaqueta e calças pretas. Os calçados foram criados com solado, biqueira e cadarços. A foto foi usada somente como referência do manequim; cadeira, ambiente e objetos não foram incorporados nem publicados.
+
+O comando de deslizar agora mostra uma bola escura giratória com aros e pontos verdes. Mantém os 0,85 segundo do controlador, colisões e controles originais. Salto, colisão e reinício restauram o corpo articulado. A geometria é preparada uma vez e agrupada para evitar criação de objetos durante a corrida.
+
+A frase única “Ai, minha língua!” foi regenerada localmente em velocidade normal (1,49 s). O acabamento remove apenas silêncio e preserva o tom; foi retirada a aceleração e a reamostragem. Limitação: a voz disponível continua sendo Microsoft Maria Desktop, sintética, sem interpretação de ator. Não foi utilizado serviço externo de voz.
+
+Validação local: physical-chapters (45), upgrade (26), award-finale (33) e character-roll (10) aprovados no Edge com GPU. O teste de rolagem percorre 100 quadros e verifica duração, rotação, limites geométricos, cancelamento por salto, colisão e reset. Capturas de menu e bola inspecionadas visualmente. O controlador PlayerController não foi alterado.
+
+Áudio: award-audio aprovado em 15 verificações com AudioContext real, sinal nos efeitos, mute e liberação de fontes. Total desta revisão: 129 verificações aprovadas.

@@ -1,0 +1,18 @@
+﻿<!doctype html><html><head><meta charset="utf-8"><script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script></head><body><pre id="result">RUNNING</pre><script type="module">
+import * as THREE from 'three';import {Mannequin} from '../src/player/CinematicMannequin.js';import {PlayerController} from '../src/player/PlayerController.js';
+const rows=[],check=(v,n)=>{if(!v)throw Error(n);rows.push('PASS '+n)};
+try{const rig=new Mannequin(),motion=new PlayerController();rig.update(0,true,motion);
+check(rig.greenGlow.emissive.g>rig.greenGlow.emissive.b,'PC and roll use green illumination');
+check(rig.glow.emissive.b>rig.glow.emissive.r,'Respirator retains cyan details');
+check(rig.body.visible&&!rig.rollBall.visible,'Normal run shows mannequin');
+motion.slide();check(motion.slideTime===.85,'Original slide duration stays 0.85 seconds');
+for(let i=0;i<100;i++){motion.update(1/120);rig.update(1/120,true,motion);if(!rig.rollBall.visible||rig.body.visible)throw Error('Roll interrupted at frame '+i);}
+const angle=rig.rollBall.rotation.x;rig.update(.001,true,motion);check(angle!==rig.rollBall.rotation.x,'Ball actually rotates');
+rig.root.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(rig.root,true);check(bounds.min.y>=0&&bounds.max.y<1.18,'Roll stays above floor and below overhead beam');
+motion.update(.02);rig.update(.02,true,motion);check(!rig.rollBall.visible&&rig.body.visible,'Returns immediately after original timer');
+motion.slide();rig.update(.01,true,motion);motion.jump();rig.update(.01,true,motion);check(!rig.rollBall.visible&&rig.body.visible,'Jump cancels roll');
+motion.reset();motion.slide();rig.update(.01,true,motion);rig.update(.01,false,motion,true);check(!rig.rollBall.visible&&rig.body.visible,'Collision restores articulated mannequin');
+rig.resetPose();check(!rig.rollBall.visible&&rig.body.visible,'Restart clears roll');
+document.querySelector('#result').textContent=rows.join('\n')+'\nALL PASS';}catch(e){document.querySelector('#result').textContent=rows.join('\n')+'\nFAIL '+e.stack;}
+</script></body></html>
+
