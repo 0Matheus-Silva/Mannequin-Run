@@ -1,4 +1,4 @@
-﻿<!doctype html><html><head><meta charset="utf-8"><script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script></head><body><pre id="result">RUNNING</pre><script type="module">
+<!doctype html><html><head><meta charset="utf-8"><script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script></head><body><pre id="result">RUNNING</pre><script type="module">
 import * as THREE from 'three';import {Mannequin} from '../src/player/CinematicMannequin.js';import {PlayerController} from '../src/player/PlayerController.js';
 const rows=[],check=(v,n)=>{if(!v)throw Error(n);rows.push('PASS '+n)};
 try{const rig=new Mannequin(),motion=new PlayerController();rig.update(0,true,motion);
