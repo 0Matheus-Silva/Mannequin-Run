@@ -8,6 +8,8 @@ A publicação foi autorizada expressamente pelo usuário após as etapas locais
 
 ## Ajustes finais desta versão
 
+Atualização posterior: a fala foi reduzida para **“Ai, minha língua!”**, sem interjeições repetidas, com cerca de 1,2 s. A espera programada depois do pouso foi eliminada: as apresentações começam imediatamente no mesmo enquadramento, a câmera inicia seu movimento em cerca de 0,3 s e a sequência avança 40% mais rápido. A ordem dos concorrentes foi preservada. Créditos continuam em tempo real por nove segundos. Os marcos abaixo descrevem a revisão anterior; os tempos internos da animação agora avançam mais rápido que o relógio real, com salto direto para a apresentação após pousar. Atalhos e capturas usam `seek()` para preservar cenas específicas.
+
 - Grito do baú refeito como “Aaaaah! Ai! Ai! Minha língua!”, com repetição, ênfase e variação de tom. O WAV tem 3,2 segundos; a versão anterior tinha 1,7 segundo e interpretação muito acelerada. Continua sendo síntese local do Windows, sem ator humano ou serviço externo de voz.
 - A câmera permanece no baú e as lágrimas duram mais. A música fica reduzida durante toda a fala. A aproximação do protagonista ocorre aos 31–32 s; levantamento da taça aos 32–34 s, WIN! aos 34 s e créditos aos 34,8 s. Vitória aos 35 s; créditos continuam rolando por nove segundos.
 - Vidro lateral fixo fecha o trecho entre x = 3,9 e 8,15 na entrada da UniFECAF. Complementos superior e esquerdo cobrem o restante do portal; ficam atrás das folhas móveis, sem superfícies coplanares. A abertura central continua liberando as três faixas.

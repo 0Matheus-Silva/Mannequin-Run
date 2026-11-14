@@ -142,7 +142,7 @@ export class Game {
       this.world.applyPalette(chapter.distance);this.atmosphere.update(chapter.distance,'story');this.passages.update(chapter.distance,'story');
       this.sector=sectorAt(chapter.distance);this.ui.sector(this.sector,true);this.audio.setSector(this.sector,false);
       this.camera.position.set(0,3.8,7);this.target.set(0,1.4,-7);this.camera.lookAt(this.target);
-      if(chapter.endingTime!==undefined){this.startEnding();this.finale.advance(chapter.endingTime);}
+      if(chapter.endingTime!==undefined){this.startEnding();this.finale.seek(chapter.endingTime);}
       this.update();this.ui.status('TRECHO DO MODO HISTÓRIA / '+chapter.name);
     }
   }

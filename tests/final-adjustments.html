@@ -43,7 +43,7 @@ try{
   game.finale.advance(5);game.update();check(game.finale.entryOpen>.5&&game.finale.entryOpen<1,'Portas integradas se movem durante aproximação');
   game.finale.advance(3);game.update();check(game.finale.entryOpen===1&&Math.abs(game.finale.entryDoors[0].position.x)>6,'Entrada totalmente aberta com três faixas livres');
   game.finale.advance(5);game.update();check(game.finale.phase==='interior'&&!game.world.root.visible,'Travessia continua pelo interior');
-  game.finale.advance(13);game.update();
+  game.finale.seek(26);game.update();
   check(game.finale.others[0].root.userData.kind==='monitor-chest'&&game.finale.others[1].root.userData.kind==='plasma-speaker','Segundo lugar é o baú e terceiro é o projeto de plasma');
   check(game.finale.others[0].screen.userData.monitor&&game.finale.others[0].lid.rotation.x<-.9,'Baú mantém boca aberta e monitor identificável antes da reação');
   game.finale.advance(8);game.update();

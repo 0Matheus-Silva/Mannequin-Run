@@ -2,7 +2,7 @@
 
 **Jogar no navegador:** [MANNEQUIN RUN no GitHub Pages](https://0matheus-silva.github.io/Mannequin-Run/).
 
-**Último ajuste:** baú com grito prolongado “Aaaaah! Ai! Ai! Minha língua!”, câmera e lágrimas acompanhando a reação completa; entrada da UniFECAF com fechamento lateral direito e superior, sem vão para o interior. [Publicação e funcionamento no Pages](./docs/PUBLICACAO.md). Os relatórios abaixo são registros de versões anteriores.
+**Último ajuste:** fala direta “Ai, minha língua!”, sem repetições; apresentações começam assim que termina o pouso, com ritmo 40% mais rápido e câmera contínua. Entrada da UniFECAF com fechamento lateral direito e superior, sem vão para o interior. [Publicação e funcionamento no Pages](./docs/PUBLICACAO.md). Os relatórios abaixo são registros de versões anteriores.
 
 **Entrega atual — cinema e Sadachbia:** câmera individual para os três concorrentes, fala local do baú, explosão/fanfarra em WAV, mixagem revisada, WIN! e créditos de nove segundos. Gemini configurado para Sadachbia com nova personalidade; sessão real permanece desativada e pendente de validação autorizada. [Relatório dos dois prompts e testes](./docs/CINEMA-VOZ-SADACHBIA.md). Instância atualizada em **http://localhost:8082**. Os relatos abaixo registram versões anteriores.
 

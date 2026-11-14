@@ -32,7 +32,7 @@ try{
   const pieces=root=>{let n=0;root.traverse(node=>{if(node.isMesh)n+=node.isInstancedMesh?node.count:1;});return n;};check(pieces(game.finale.campus)>100&&pieces(game.finale.hall)>15,'Campus and entrance are reconstructed 3D geometry');
   game.advance(5);game.update();check(game.finale.phase==='arrival'&&game.finale.root.position.z>0,'Campus approaches continuously');game.pause();const t=game.finale.elapsed;game.advance(2);check(game.finale.elapsed===t,'Ending pauses without losing progress');game.resume();
   game.advance(8);game.update();check(game.finale.phase==='interior'&&!game.world.root.visible,'Portal leads into foyer and auditorium');
-  game.advance(19);game.update();check(game.finale.phase==='trophy'&&game.finale.others.length===2&&game.finale.trophy.visible,'Three exhibition projects share podium and protagonist receives trophy');
+  game.finale.seek(32);game.update();check(game.finale.phase==='trophy'&&game.finale.others.length===2&&game.finale.trophy.visible,'Three exhibition projects share podium and protagonist receives trophy');
   game.advance(4);game.update();check(game.player.arms[1].pivot.rotation.x<-2,'Winner raises trophy');
   game.advance(6);game.update();check(game.state==='victory'&&!doc.querySelector('#victory-panel').hidden,'Ceremony ends on victory screen');
   check(doc.querySelector('#victory-panel').textContent.includes('UniFECAF')&&doc.querySelector('#victory-panel').textContent.includes('EXPOTECH 2026'),'Victory uses exact institution and event names');

@@ -2,8 +2,8 @@ import * as THREE from 'three';
 
 // World-space camera keys: all approaches remain in front of the stage.
 const keys=[
-  {time:21,position:[0,4.5,9],target:[0,3.1,-10],fov:48},
-  {time:22,position:[0,4.5,9],target:[0,3.1,-10],fov:48},
+  {time:21,position:[0,5.4,11],target:[0,3.4,-8],fov:48},
+  {time:21.4,position:[0,5.4,11],target:[0,3.4,-8],fov:48},
   {time:23,position:[4.4,3.65,-1.8],target:[4.4,2.5,-10],fov:43},
   {time:26,position:[4.4,3.65,-1.8],target:[4.4,2.5,-10],fov:43},
   {time:27,position:[-4.4,3.9,-1.6],target:[-4.4,2.8,-9.8],fov:43},

@@ -47,7 +47,7 @@ if voice.exists():
     active=[i for i,v in enumerate(pcm) if abs(v)>peak*.025]
     if active:
         pcm=pcm[max(0,active[0]-int(rate*.025)):min(len(pcm),active[-1]+int(rate*.06))]
-        target=min(len(pcm),int(rate*3.2))
+        target=min(len(pcm),int(rate*1.7))
         result=array.array('h')
         for i in range(target):
             position=i*(len(pcm)-1)/max(1,target-1);index=int(position);fraction=position-index

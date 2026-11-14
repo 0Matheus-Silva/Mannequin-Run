@@ -20,7 +20,7 @@ if(['distant','facade','arrival','entrance','ceremony','victory','credits','jump
   else{
     for(let i=0;i<10;i++)game.world.replace(i,1);
     game.session.distance=2300;game.sector=3;game.ui.sector(3,false);game.world.applyPalette(2300);game.atmosphere.update(2300,'story');game.update();
-    if(view!=='distant'){game.session.distance=2400;game.startEnding();game.finale.advance(Number(params.get('time')??({facade:3,arrival:7,entrance:11,ceremony:25.5,victory:35,credits:40}[view])));game.update();}
+    if(view!=='distant'){game.session.distance=2400;game.startEnding();game.finale.seek(Number(params.get('time')??({facade:3,arrival:7,entrance:11,ceremony:25.5,victory:35,credits:40}[view])));game.update();}
   }
 }
 if(view==='menu'){for(let i=0;i<15;i++)game.player.update(1/60,false,game.motion,false,{cameraPosition:game.camera.position});game.camera.lookAt(game.target);}

@@ -99,8 +99,12 @@ Entrega mais recente dos dois prompts: plano aberto e três closes com travellin
 
 Correção posterior do chão piscando: o corredor e o auditório tinham 5,5 m de pisos sobrepostos exatamente na altura zero. O piso do auditório agora começa onde termina o corredor (z = −167,5). Rua e calçadas também terminam no limiar da entrada (z = −102,5), eliminando sobreposição quase coplanar na chegada. A altura do percurso e o apoio do palco foram preservados. Teste dedicado `tests/finale-floor.html` verifica limites, ausência de vãos/superfícies duplicadas e visibilidade durante toda a transição. Evidências em `.tmp-qa/piso-*.txt`.
 
-## Pendências reservadas para a etapa 6
+## Fala curta e apresentações sem espera
+
+Último ajuste de ritmo: fala do baú simplificada para “Ai, minha língua!”, sem repetições (~1,2 s). A chegada ao topo emenda diretamente no início das apresentações; câmera contínua e sequência 40% mais rápida. Créditos mantêm nove segundos reais e capítulos usam posicionamento explícito na cena, preservando seus atalhos. Evidências atuais em `.tmp-qa/ritmo-*.txt`.
 
 Atualização autorizada para GitHub: grito prolongado do baú com “Aaaaah! Ai! Ai! Minha língua!” (3,2 s), câmera/reações sincronizadas e entrada da UniFECAF fechada também na lateral direita e acima das folhas móveis. Automação de GitHub Pages em `.github/workflows/pages.yml`; artefato público contém apenas o jogo estático. A autorização mais recente permite commit, push e publicação neste repositório. Consulte [publicação e testes](./PUBLICACAO.md). Os registros anteriores de proibição de publicação são históricos.
 
-Homologação final em hardware real: sessões prolongadas, sensação dos controles, audição, desempenho, telas cheias e janelas nas resoluções recomendadas; refinamentos que essa homologação revelar. Publicação no GitHub Pages e conferência do endereço publicado também permanecem pendentes. Não foram realizadas operações remotas de versionamento ou publicação.
+## Homologação complementar
+
+Continuam disponíveis para avaliação humana as sessões prolongadas, sensação dos controles, audição, desempenho, telas cheias e janelas nas resoluções recomendadas. O jogo já foi publicado no GitHub Pages mediante autorização posterior; as restrições e pendências de publicação dos registros antigos são históricas.

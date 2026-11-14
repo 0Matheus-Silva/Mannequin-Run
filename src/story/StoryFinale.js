@@ -108,8 +108,21 @@ export class StoryFinale{
   }
   updateEntrance(remaining){this.entryOpen=entranceState(remaining);this.entryDoors.forEach((door,i)=>door.position.x=(i?1:-1)*(1.95+this.entryOpen*4.3));}
   replayCredits(){this.creditElapsed=0;this.creditsManual=true;}
+  seek(time){this.elapsed=Math.min(ENDING_DURATION,Math.max(0,time));this.creditElapsed=time-CREDITS_START;this.done=time>=ENDING_DURATION;if(this.done)this.game.setState('victory');}
   get walking(){return this.elapsed<podiumTiming(this.arrivalSpeed).stairs;}
-  advance(dt){this.creditElapsed+=dt;if(Math.abs(this.creditElapsed)<1e-8)this.creditElapsed=0;const before=arrivalTravel(this.elapsed,this.arrivalSpeed);this.elapsed=Math.min(ENDING_DURATION,this.elapsed+dt);const after=arrivalTravel(this.elapsed,this.arrivalSpeed);if(after>before&&dt>0)this.game.world.update(dt,(after-before)/dt,2400+after);if(this.elapsed>=ENDING_DURATION&&!this.done){this.done=true;this.game.setState('victory');}}
+  advance(dt){
+    const previous=this.elapsed,landed=podiumTiming(this.arrivalSpeed).end,before=arrivalTravel(previous,this.arrivalSpeed),rate=1.4;
+    let next=previous+dt*(previous>=21?rate:1);
+    // Begin the presentations immediately after the landing, without a timed hold.
+    if(previous<21&&next>=landed)next=21+(next-landed)*rate;
+    this.elapsed=Math.min(ENDING_DURATION,next);
+    if(this.creditsManual||previous>=CREDITS_START)this.creditElapsed+=dt;
+    else this.creditElapsed=this.elapsed<CREDITS_START?this.elapsed-CREDITS_START:(next-CREDITS_START)/rate;
+    if(Math.abs(this.creditElapsed)<1e-8)this.creditElapsed=0;
+    const after=arrivalTravel(this.elapsed,this.arrivalSpeed);
+    if(after>before&&dt>0)this.game.world.update(dt,(after-before)/dt,2400+after);
+    if(this.elapsed>=ENDING_DURATION&&!this.done){this.done=true;this.game.setState('victory');}
+  }
   present(dt){
     const g=this.game,t=this.elapsed,travel=arrivalTravel(t,this.arrivalSpeed),phase=endingPhase(t);this.phase=phase;
     g.audio.setCeremonyDucking(t);
@@ -133,7 +146,7 @@ export class StoryFinale{
     else{const shot=awardCamera(t);g.camera.position.copy(shot.position);g.target.copy(shot.target);g.camera.fov=shot.fov;g.camera.updateProjectionMatrix();}
     const jumpTiming=podiumTiming(this.arrivalSpeed);
     if(t>=jumpTiming.start-.6&&t<21){
-      const follow=THREE.MathUtils.smootherstep(t,jumpTiming.start-.6,jumpTiming.stairs),wide=THREE.MathUtils.smootherstep(t,jumpTiming.end,21);
+      const follow=THREE.MathUtils.smootherstep(t,jumpTiming.start-.6,jumpTiming.stairs),wide=0;
       g.camera.position.set(0,THREE.MathUtils.lerp(THREE.MathUtils.lerp(3.8,5.4,follow),4.5,wide),THREE.MathUtils.lerp(THREE.MathUtils.lerp(7,11,follow),9,wide));
       g.target.set(0,THREE.MathUtils.lerp(THREE.MathUtils.lerp(2,3.4,follow),3.1,wide),THREE.MathUtils.lerp(THREE.MathUtils.lerp(-20,-8,follow),-10,wide));
     }
@@ -143,7 +156,7 @@ export class StoryFinale{
     if(t>=22&&t<25.5){const cue='charge-'+Math.floor((t-22)*4);if(!this.soundCues.has(cue)){this.soundCues.add(cue);g.audio.effect('plasma-charge',(t-22)/3.5);}}
     for(const [name,from,to] of [['plasma-burst',25.5,26.4],['tongue-yelp',27.65,28.4]])if(t>=from&&t<to&&!this.soundCues.has(name)){this.soundCues.add(name);g.audio.effect(name);}
     const lift=THREE.MathUtils.smoothstep(t,32,34);
-    this.trophy.visible=t>=34;
+    this.trophy.visible=t>=32;
     if(t>=32){
       g.player.arms[1].pivot.rotation.x=-lift*2.5;g.player.arms[1].joint.rotation.x=-.3;
       g.player.root.updateMatrixWorld(true);const hand=g.player.arms[1].hand.getWorldPosition(new THREE.Vector3());
