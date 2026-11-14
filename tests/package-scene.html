@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Visual package scene</title><style>html,body{margin:0;background:#000}iframe{display:block;width:100vw;height:100vh;border:0}</style></head><body><iframe id="frame" src="../index.html"></iframe><script type="module">
+const frame=document.querySelector('#frame');for(let i=0;i<150;i++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+const doc=frame.contentDocument,ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);const game=await ready;
+game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);game.clock.getDelta=()=>0;
+const params=new URLSearchParams(location.search),view=params.get('view')??'menu';game.chooseMode('story');
+if(!['menu','settings','chapters'].includes(view)){
+  game.startRun();game.track.reset();const sectors={lab:0,city:1,industrial:2,contaminated:3,door:0};const sector=sectors[view]??0;
+  game.session.distance=view==='door'?565:sector*600+180;game.sector=sector;
+  for(let i=0;i<10;i++){const absolute=game.session.distance-game.world.segments[i].position.z+8;game.world.replace(i,view==='door'?Math.floor(absolute/600)%4:sector);}
+  game.world.applyPalette(game.session.distance);game.atmosphere.update(game.session.distance);game.ui.sector(sector,false);
+  game.camera.position.set(0,3.8,7);game.target.set(0,1.4,-7);game.camera.lookAt(game.target);game.player.root.rotation.y=0;
+  if(view==='door')game.passages.update(game.session.distance,'story');
+  else{game.track.index=6;game.track.spawn(sector);game.track.rows[0].group.position.z=-18;game.track.spawn(sector);game.track.rows[1].group.position.z=-45;}
+  for(let i=0;i<20;i++)game.player.update(1/60,true,game.motion);
+  if(view==='fall'){game.crash();for(let i=0;i<90;i++)game.player.update(1/60,false,game.motion,true);}
+}
+if(['distant','facade','arrival','entrance','ceremony','victory','credits','jump-route','slide-route','weave-route'].includes(view)){
+  game.session.mode='story';game.world.mode='story';
+  if(view.endsWith('-route')){game.track.reset();game.track.index={'jump-route':5,'slide-route':6,'weave-route':7}[view];game.track.spawn(0);game.track.rows[0].group.position.z=-15;}
+  else{
+    for(let i=0;i<10;i++)game.world.replace(i,1);
+    game.session.distance=2300;game.sector=3;game.ui.sector(3,false);game.world.applyPalette(2300);game.atmosphere.update(2300,'story');game.update();
+    if(view!=='distant'){game.session.distance=2400;game.startEnding();game.finale.advance(Number(params.get('time')??({facade:3,arrival:7,entrance:11,ceremony:25.5,victory:35,credits:40}[view])));game.update();}
+  }
+}
+if(view==='menu'){for(let i=0;i<15;i++)game.player.update(1/60,false,game.motion,false,{cameraPosition:game.camera.position});game.camera.lookAt(game.target);}
+if(view==='settings')doc.querySelector('#settings-open').click();
+if(view==='chapters')doc.querySelector('#chapters-open').click();
+game.ui.update(game.session);game.render();
+</script></body></html>

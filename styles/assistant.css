@@ -1,0 +1,38 @@
+#assistant-open { position:absolute; right:70px; bottom:115px; border:1px solid #52c9ca; background:#0a2028ed; color:#a4efec; padding:14px 22px; font:13px Consolas,monospace; letter-spacing:2px; }
+.assistant-visible #pause-button { right:515px; }
+#assistant-panel { position:absolute; right:45px; top:103px; width:445px; height:850px; background:linear-gradient(145deg,#142832f5,#06121bf9); border:1px solid #467782; box-shadow:0 20px 70px #0009,inset 0 2px #5dded9; padding:19px; display:flex; flex-direction:column; gap:10px; color:#d7e8ed; font-size:15px; }
+#assistant-panel button,#assistant-panel select,#assistant-panel input { font:inherit; }
+#assistant-panel button { border:1px solid #41636f; background:#102630; color:#c3ecea; padding:10px; font:11px Consolas,monospace; cursor:pointer; }
+#assistant-panel button:hover { border-color:#73e7e0; }
+#assistant-panel button:disabled { opacity:.45; cursor:default; }
+.assistant-heading { display:flex; align-items:center; gap:12px; }
+.assistant-avatar { width:65px; flex:0 0 65px; filter:drop-shadow(0 0 6px #34d3d430); }
+.assistant-heading h2 { font-size:22px; margin:6px 0; letter-spacing:1px; }
+.assistant-heading small { font:10px Consolas,monospace; color:#75bdbf; letter-spacing:2px; }
+.assistant-heading p { font-size:12px; margin:0; color:#92b3bf; }
+#assistant-minimize { align-self:flex-start; font-size:22px!important; padding:0 10px!important; margin-left:auto; }
+#assistant-disclosure { color:#8fceca; font:11px/1.5 Consolas,monospace; margin:0; padding:9px; border-left:2px solid #63dad1; background:#10242d; }
+.assistant-provider-row { display:flex; align-items:center; gap:15px; font-size:12px; }
+#assistant-provider { flex:1; width:240px; background:#0a1820; border:1px solid #40616b; color:#cde4e7; padding:8px; font-size:12px!important; }
+#assistant-external { font-size:11px; color:#e1caa5; padding:8px; background:#35291970; }
+#assistant-external p { margin:0 0 5px; }
+#assistant-external input { accent-color:#76d7d3; }
+.assistant-actions { display:flex; gap:6px; }.assistant-actions button { flex:1; }
+.assistant-state-row { display:flex; gap:8px; align-items:center; font:11px Consolas,monospace; letter-spacing:1px; color:#76d8d3; }
+.assistant-state-row i { width:7px; height:7px; background:#526875; border-radius:50%; }
+#assistant-panel[data-state=listening] .assistant-state-row i { background:#f0a96e; box-shadow:0 0 10px #ffb06e; }
+#assistant-panel[data-state=speaking] .assistant-avatar { animation:assistant-pulse .7s ease-in-out infinite alternate; }
+#assistant-panel[data-state=speaking] .assistant-state-row i { background:#58e6d5; }
+#assistant-panel[data-state=error] .assistant-state-row { color:#ffba94; }
+#assistant-note { margin:0; font-size:12px; line-height:1.4; color:#c0cbd0; }
+#assistant-history { flex:1; min-height:70px; overflow-y:auto; scrollbar-color:#38636c #0a1820; background:#040e1560; padding:10px; }
+.assistant-message { padding:10px; margin-bottom:9px; border-left:2px solid #37616b; background:#0b1c24; }
+.assistant-message.user { border-color:#8a9967; background:#192328; }
+.assistant-message b { font:10px Consolas,monospace; color:#68c9c5; letter-spacing:1px; }.assistant-message p { margin:6px 0 0; font-size:14px; line-height:1.5; overflow-wrap:anywhere; white-space:pre-wrap; }
+.assistant-input-label { font:11px Consolas,monospace; color:#89b4bf; display:block; margin-bottom:6px; }
+#assistant-form>div { display:flex; gap:6px; }#assistant-input { min-width:0; flex:1; background:#030f18; color:#e1eff2; border:1px solid #426774; padding:10px; font-size:14px!important; }
+.assistant-audio { display:flex; flex-wrap:wrap; gap:7px; }.assistant-audio button { flex:1; }.assistant-audio label { display:flex; align-items:center; gap:12px; width:100%; font-size:12px; color:#9dbac5; }.assistant-audio input { flex:1; accent-color:#6cdbd2; }
+.assistant-privacy { font-size:11px; line-height:1.4; color:#8ca8b3; margin:0; }
+#assistant-end { align-self:flex-end; padding:6px!important; background:transparent!important; color:#b4bec1!important; }
+@keyframes assistant-pulse { to { filter:drop-shadow(0 0 8px #47e3d4a0); } }
+@media (prefers-reduced-motion:reduce) { #assistant-panel .assistant-avatar { animation:none!important; } }

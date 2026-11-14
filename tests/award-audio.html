@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body><pre id="result">RUNNING</pre><script type="module">
+import {AudioEngine} from '../src/audio/AudioEngine.js';
+const rows=[],check=(v,n)=>{if(!v)throw Error(n);rows.push('PASS '+n);};
+try{
+const audio=new AudioEngine();await audio.unlock();audio.setEnabled(true);audio.setPlaying(false);audio.setMusicEnabled(false);audio.ambient.gain.cancelScheduledValues(audio.context.currentTime);audio.ambient.gain.setValueAtTime(0,audio.context.currentTime);
+check(audio.context?.state==='running','AudioContext real inicializa após liberação de reprodução no navegador de teste');
+const analyser=audio.context.createAnalyser();analyser.fftSize=2048;audio.effectsBus.connect(analyser);
+for(const name of ['plasma-charge','plasma-burst','tongue-yelp','victory']){audio.effect(name);check(audio.voices.size>0,'Efeito '+name+' cria fontes no barramento de efeitos');let peak=0;for(let n=0;n<8;n++){await new Promise(r=>setTimeout(r,25));const samples=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(samples);peak=Math.max(peak,...samples.map(Math.abs));}check(peak>.0001,'Efeito '+name+' produz sinal de áudio');await new Promise(r=>setTimeout(r,3600));check(audio.voices.size===0,'Efeito '+name+' libera suas fontes ao terminar');}
+audio.setEnabled(false);audio.effect('plasma-burst');check(audio.voices.size===0,'Mute impede novos efeitos da premiação');await audio.dispose();check(audio.context===null,'Encerrar áudio libera AudioContext');document.querySelector('#result').textContent=rows.join('\n')+'\nALL PASS';
+}catch(e){document.querySelector('#result').textContent=rows.join('\n')+'\nFAIL '+e.stack;}window.benchmarkDone=true;
+</script></body></html>

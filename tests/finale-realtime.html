@@ -1,0 +1,16 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Final no loop nativo</title></head><body><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+try{
+  const frame=document.querySelector('#frame');for(let n=0;n<300;n++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+  const doc=frame.contentDocument,ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);const game=await ready;
+  game.audio.setEnabled(false);game.setQuality('eco');game.chooseMode('story');game.startRun();game.track.reset();game.session.distance=2399.8;
+  const states=new Set(),phases=new Set(),effects=[];let open=false,frames=0;const update=game.update.bind(game),started=performance.now();game.update=()=>{update();frames++;states.add(game.state);if(game.finale?.phase)phases.add(game.finale.phase);if(game.finale?.entryOpen===1)open=true;const f=game.finale;if(f?.others&&f.elapsed>=21){for(const [name,visible] of [['charge',f.others[1].arcs.visible],['burst',f.others[1].burst.visible],['tears',f.others[0].tears.visible],['trophy',f.trophy.visible],['win',!doc.querySelector('#award-win').hidden]])if(visible&&!effects.includes(name))effects.push(name);}};
+  for(let n=0;n<650&&game.state!=='victory';n++)await new Promise(r=>setTimeout(r,100));
+  if(game.state!=='victory'||!open||!['arrival','interior','podium','trophy'].every(p=>phases.has(p)))throw Error('Final incompleto: '+game.state+' '+[...phases]+' porta='+open);
+  for(let n=0;n<260&&game.finale.creditElapsed<5;n++)await new Promise(r=>setTimeout(r,100));
+  game.renderer.setAnimationLoop(null);
+  if(game.finale.creditElapsed<5||doc.querySelector('#credits-roll').hidden)throw Error('Créditos não avançaram no loop nativo');
+  if(effects.join(',')!=='charge,burst,tears,trophy,win')throw Error('Ordem dos efeitos incorreta no loop real: '+effects);
+  document.querySelector('#result').textContent='PASS Loop nativo atravessa chegada, interior, pódio e troféu até vitória\nPASS Porta abre e pontuação permanece encerrada\nPASS Créditos automáticos continuam subindo depois da vitória\nPASS Loop real apresenta sobrecarga, explosão, lágrimas, taça e vitória nessa ordem\nMETRIC frames='+frames+' elapsed_ms='+(performance.now()-started).toFixed(0)+'\nALL PASS';
+  if(!game.session.ended)throw Error('Sessão não encerrada');window.benchmarkDone=true;
+}catch(e){document.querySelector('#result').textContent='FAIL '+e.stack;window.benchmarkDone=true;}
+</script></body></html>

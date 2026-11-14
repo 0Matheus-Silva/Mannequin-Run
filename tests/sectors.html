@@ -1,0 +1,24 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Sector checks</title><script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script></head><body><pre id="result">RUNNING</pre><script type="module">
+import * as THREE from 'three';
+import { SectorWorld } from '../src/environments/SectorWorld.js';
+import { SECTORS, sectorAt, transitionAt } from '../src/environments/Sectors.js';
+const output=[];const check=(v,n)=>{if(!v)throw Error(n);output.push('PASS '+n);};
+try{
+  check([0,600,1200,1800,2400].map(sectorAt).join(',')==='0,1,2,3,0','Four sectors cycle infinitely');
+  check(transitionAt(480).blend===0&&transitionAt(540).blend===.5,'Transition eases across 120 meters');
+  const scene=new THREE.Scene();scene.background=new THREE.Color();scene.fog=new THREE.FogExp2();
+  const hemi=new THREE.HemisphereLight();const rim=new THREE.PointLight();const world=new SectorWorld(scene,hemi,rim);
+  for(const distance of [600,1200,1800,2400]){
+    world.applyPalette(distance-.001);const before=scene.background.clone();world.applyPalette(distance+.001);
+    check(before.distanceTo?before.distanceTo(scene.background)<.001:Math.abs(before.r-scene.background.r)+Math.abs(before.g-scene.background.g)+Math.abs(before.b-scene.background.b)<.001,'Atmosphere continuity at '+distance+'m');
+  }
+  for(let sector=0;sector<4;sector++){
+    for(let n=0;n<150;n++)world.update(.1,20,sector*600+180);
+    check(world.segments.every(s=>s.userData.sector===sector),'Architecture recycles into sector '+(sector+1));
+    check(world.root.children.length===11,'Fixed segment and particle count in sector '+(sector+1));
+    check(scene.background.equals(SECTORS[sector].sky),'Distinct palette in sector '+(sector+1));
+  }
+  world.reset();check(world.segments.every(s=>s.userData.sector===0)&&scene.background.equals(SECTORS[0].sky),'Restart restores laboratory');
+  document.querySelector('#result').textContent=output.join('\n')+'\nALL PASS';
+}catch(e){document.querySelector('#result').textContent=output.join('\n')+'\nFAIL '+e.stack;}
+</script></body></html>

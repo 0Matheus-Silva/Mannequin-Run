@@ -1,0 +1,45 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Mechanics tests</title>
+<script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script></head>
+<body><pre id="result">RUNNING</pre><iframe id="game" src="../index.html" width="960" height="540"></iframe><script type="module">
+import { overlapsPlayer, canCollect, createPattern } from '../src/obstacles/Collision.js';
+import { PlayerController } from '../src/player/PlayerController.js';
+import { Records, RunSession } from '../src/game/RunSession.js';
+const results=[];
+const check=(v,n)=>{if(!v)throw Error(n); results.push('PASS '+n);};
+try {
+  const p=new PlayerController(); const block={type:'block',x:0};
+  check(overlapsPlayer(p,block,-2,2),'Swept collision catches fast crossing');
+  check(!overlapsPlayer(p,block,-5,-3),'No collision before contact');
+  p.x=2.7;check(!overlapsPlayer(p,block,-.1,.1),'Adjacent lane is clear');p.x=0;
+  check(overlapsPlayer(p,{type:'jump',x:0},-.1,.1),'Low barrier hits grounded player');
+  p.y=1;check(!overlapsPlayer(p,{type:'jump',x:0},-.1,.1),'Jump clears low barrier');p.y=0;
+  check(overlapsPlayer(p,{type:'slide',x:0},-.1,.1),'Overhead beam hits standing player');
+  p.slide();p.update(.2);check(!overlapsPlayer(p,{type:'slide',x:0},-.1,.1),'Slide clears overhead beam');
+  check(overlapsPlayer(p,block,-.1,.1),'Slide cannot clear tall cabinet');p.reset();
+  check(canCollect(p,0,-2,2)&&!canCollect(p,2.7,-2,2),'Collection respects lane and swept distance');
+  for(let i=0;i<300;i++){const pattern=createPattern(i,()=>((i*17)%299)/299);if(pattern.obstacles.some(o=>o.lane===pattern.safeLane)||pattern.obstacles.length>2)throw Error('Unsafe pattern');}
+  check(true,'300 patterns always leave a free lane');
+  const mem=new Map();const storage={getItem:k=>mem.get(k),setItem:(k,v)=>mem.set(k,v)};
+  const records=new Records(storage);const session=new RunSession(records);session.update(1);session.collect();
+  check(session.distance===12&&session.score===195,'Distance and component score');session.finish();const score=session.score;session.update(1);session.collect();session.finish();
+  check(session.score===score,'Finished session freezes stats');check(new Records(storage).best===score,'Record persists across instances');
+  const unavailable=new Records(null);unavailable.save(42);check(unavailable.best===42&&!unavailable.persistent,'Storage failure keeps session record');
+  session.reset();session.distance=1e6;check(session.speed===28,'Progressive speed has a ceiling');
+  const frame=document.querySelector('#game');
+  for(let i=0;i<100;i++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+  const doc=frame.contentDocument;
+  const ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));
+  const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js'; document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);
+  const game=await ready;check(!!game,'Game initializes with live UI');game.renderer.setAnimationLoop(null);
+  doc.querySelector('#play').click();game.advance(2.65);check(game.state==='playing'&&!doc.querySelector('#hud').hidden,'Play completes cinematic and starts session and HUD');
+  game.advance(.5);const distance=game.session.distance;game.action('pause');game.advance(1);check(game.session.distance===distance&&game.state==='paused','Pause freezes simulation');
+  doc.querySelector('#resume').click();check(game.state==='playing','Resume button continues');
+  game.track.reset();game.track.spawn();const row=game.track.rows[0];row.obstacles=[{type:'block',x:0}];row.group.position.z=-.6;
+  game.advance(.1);check(game.state==='falling'&&doc.querySelector('#over-panel').hidden,'Actual collision starts controlled fall');game.advance(1.5);check(game.state==='gameover'&&!doc.querySelector('#over-panel').hidden,'Game Over follows the fall');
+  game.action('restart');check(game.state==='playing'&&game.session.distance===0&&game.session.items===0,'R restarts clean session');
+  game.track.reset();game.track.spawn();const collectRow=game.track.rows[0];collectRow.obstacles=[];collectRow.group.position.z=-.2;for(const chip of collectRow.chips){chip.position.x=0;chip.position.z=0;}
+  game.advance(.01);check(game.session.items===3,'Live track collects components');game.advance(.01);check(game.session.items===3,'Collected items cannot be counted twice');
+  game.setState('menu');check(game.state==='menu'&&game.track.rows.every(r=>!r.active),'Menu clears active objects');
+  document.querySelector('#result').textContent=results.join('\n')+'\nALL PASS';
+}catch(e){document.querySelector('#result').textContent=results.join('\n')+'\nFAIL '+e.stack;}
+</script></body></html>

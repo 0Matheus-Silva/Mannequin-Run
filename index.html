@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#060c12">
+  <title>MANNEQUIN RUN</title>
+  <link rel="stylesheet" href="./styles/main.css">
+  <link rel="stylesheet" href="./styles/assistant.css">
+  <script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js"}}</script>
+</head>
+<body>
+  <main id="viewport" aria-label="Mannequin Run — jogo 3D">
+    <div id="stage">
+      <canvas id="scene" aria-label="Laboratório abandonado e manequim tecnológico"></canvas>
+      <div class="vignette" aria-hidden="true"></div>
+      <header class="topline"><span><i></i> MNQ / DIVISÃO DE PESQUISA</span><span id="sector-label">SETOR 01 — LABORATÓRIO ABANDONADO</span></header>
+      <section id="menu" class="menu">
+        <p class="eyebrow">PROJETO MANNEQUIN / PROTOCOLO DE FUGA</p>
+        <h1>MANNEQUIN<br><span>RUN</span><em>01 /</em></h1>
+        <p class="intro">O laboratório caiu.<br>Você acabou de despertar.</p>
+        <div class="mode-select" role="group" aria-label="Modo de jogo"><button data-mode="story" aria-pressed="false">MODO HISTÓRIA</button><button data-mode="infinite" aria-pressed="true">MODO INFINITO</button></div>
+        <p id="mode-description">Corrida sem fim. Quatro ambientes. Um novo recorde.</p>
+        <button id="play" class="primary">INICIAR <span>↗</span></button>
+        <div class="menu-tools"><button id="help-open" class="secondary">COMO JOGAR <span>+</span></button><button id="chapters-open" class="secondary">CAPÍTULOS <span>↗</span></button></div>
+        <div class="build-label"><span>RECORDE PESSOAL</span> <b id="menu-best">0</b></div>
+      </section>
+      <aside class="specimen" id="specimen"><span>UNIDADE 001</span><strong>MANNEQUIN</strong><small>ESTRUTURA SINTÉTICA / NÚCLEO ATIVO</small><div class="specimen-line"></div></aside>
+      <section id="hud" hidden aria-label="Dados da partida">
+        <div class="hud-values"><div><small>PONTUAÇÃO</small><strong id="score">0</strong></div><div><small>DISTÂNCIA</small><strong id="distance">0 m</strong></div><div><small>COMPONENTES</small><strong id="items">0</strong></div><div><small>RECORDE</small><strong id="best">0</strong></div><div><small>VELOCIDADE</small><strong id="speed">43 km/h</strong></div></div>
+        <div class="sector-track"><div id="sector-progress"></div></div>
+        <button id="pause-button" class="pause-button" aria-label="Pausar partida">Ⅱ / ESC</button>
+        <div class="control-hint">A D / FAIXAS <span>↑ ESPAÇO / SALTAR</span> S ↓ / DESLIZAR</div>
+      </section>
+      <section id="pause-panel" class="game-overlay" hidden aria-labelledby="pause-title">
+        <div class="panel"><p class="eyebrow">CONEXÃO EM ESPERA</p><h2 id="pause-title">PAUSADO</h2><button id="resume" class="primary">CONTINUAR <span>↗</span></button><button data-restart class="secondary">REINICIAR</button><button data-menu class="secondary">MENU PRINCIPAL</button></div>
+      </section>
+      <section id="over-panel" class="game-overlay" hidden aria-labelledby="over-title">
+        <div class="panel"><p class="eyebrow">PROTOCOLO INTERROMPIDO</p><h2 id="over-title">FIM DE JOGO</h2><div class="final-score" id="final-score">0</div><div class="results"><span>DISTÂNCIA <b id="final-distance"></b></span><span>COMPONENTES <b id="final-items"></b></span><span>RECORDE <b id="final-best"></b></span></div><button data-restart class="primary">REINICIAR <span>↗</span></button><button data-menu class="secondary">MENU PRINCIPAL</button><p class="key-note">PRESSIONE R PARA REINICIAR</p></div>
+      </section>
+      <p id="storage-note" hidden>Recorde disponível apenas nesta sessão: armazenamento local indisponível.</p>
+      <p id="ending-caption" hidden></p>
+      <div id="award-win" hidden>WIN! <span>1º LUGAR — EXPOTECH 2026</span></div>
+      <section id="victory-panel" class="victory-panel" hidden aria-labelledby="victory-title"><p class="eyebrow">A JORNADA ENCONTROU SEU DESTINO</p><h2 id="victory-title">MANNEQUIN RUN</h2><p>UniFECAF · EXPOTECH 2026</p><strong>PRIMEIRO LUGAR</strong><button id="credits-replay" class="secondary">VER CRÉDITOS</button><button data-menu class="primary">VOLTAR AO INÍCIO <span>↗</span></button></section>
+      <section id="credits-roll" hidden aria-label="Créditos da equipe"><div id="credits-content"><h2>CDC2NA</h2><p>Fabiano Matheus de Camargo Silva</p><p>Pedro Henrique Freitas de Oliveira</p><p>Vitor Barioni Ferraz</p><small>MANNEQUIN RUN · EXPOTECH 2026</small></div></section>
+      <div id="sector-toast" aria-live="polite"><p id="sector-number"></p><h2 id="sector-name"></h2><small id="sector-subtitle"></small></div>
+      <div id="hit-flash" aria-hidden="true"></div>
+      <button id="assistant-open" aria-expanded="false" aria-controls="assistant-panel">◈ CONVERSAR COM MANNEQUIN</button>
+      <aside id="assistant-panel" hidden aria-label="Converse com o personagem MANNEQUIN RUN" data-state="idle">
+        <header class="assistant-heading"><svg class="assistant-avatar" viewBox="0 0 100 110" aria-label="Avatar de capuz e máscara ciano" role="img"><path d="M9 105V50Q7 2 50 3Q93 2 91 50V105L77 97V46Q76 18 50 16Q24 18 23 46V97Z" fill="#182931"/><ellipse cx="50" cy="55" rx="28" ry="38" fill="#030b11"/><g fill="none" stroke="#5ae6ef" stroke-width="1.7"><path d="M29 48Q25 26 42 27Q52 28 51 43M29 53Q32 62 41 60M57 42Q56 24 65 21M57 48L74 54M77 62Q69 75 78 80M28 72Q38 69 39 91"/><ellipse cx="53" cy="70" rx="8" ry="11"/></g></svg><div><small>UNIDADE CONVERSACIONAL</small><h2>MANNEQUIN RUN</h2><p>Capuz, circuitos e algumas boas perguntas.</p></div><button id="assistant-minimize" aria-label="Minimizar conversa">−</button></header>
+        <p id="assistant-disclosure"></p>
+        <div class="assistant-provider-row"><label for="assistant-provider">Conexão</label><select id="assistant-provider"><option value="demo">Demonstração local</option><option value="live">Gemini Live (requer configuração)</option></select></div>
+        <div id="assistant-external" hidden><p>Áudio e texto enviados ao Google. No serviço gratuito, dados podem ser usados para aprimorar produtos e revistos por pessoas. Não informe dados pessoais. Público e cota devem ser revisados pela equipe; este aceite não verifica idade.</p><label><input id="assistant-consent" type="checkbox"> Entendi o processamento externo desta sessão.</label></div>
+        <div class="assistant-actions"><button id="assistant-start">INICIAR / RECONECTAR</button><button id="assistant-present">CONHEÇA O MANNEQUIN RUN</button></div>
+        <div class="assistant-state-row"><i aria-hidden="true"></i><span id="assistant-state" role="status"></span></div><p id="assistant-note" role="status"></p>
+        <div id="assistant-history" role="log" aria-label="Histórico desta sessão" aria-live="polite"></div>
+        <form id="assistant-form"><label class="assistant-input-label" for="assistant-input">Sua pergunta</label><div><input id="assistant-input" maxlength="1000" autocomplete="off" placeholder="Pergunte sobre o projeto…" disabled><button id="assistant-send" type="submit" disabled>ENVIAR</button></div></form>
+        <div class="assistant-audio"><button id="assistant-mic" aria-pressed="false">○ ATIVAR MICROFONE</button><button id="assistant-stop">INTERROMPER FALA</button><label for="assistant-volume">Voz <input id="assistant-volume" type="range" min="0" max="1" step="0.05" value="0.65"></label></div>
+        <p class="assistant-privacy">Histórico só na memória desta sessão. Encerrar limpa a conversa. Minimizar desliga o microfone.</p><button id="assistant-end">ENCERRAR E LIMPAR</button>
+      </aside>
+      <footer><span id="status" role="status">INICIALIZANDO SISTEMAS…</span><div class="utilities"><button id="audio-button" aria-pressed="true">♪ ÁUDIO LIGADO</button><button id="settings-open">CONFIGURAÇÕES</button><button id="fullscreen">⛶ TELA CHEIA</button></div></footer>
+      <dialog id="help">
+        <p class="eyebrow">PROTOCOLO DE SOBREVIVÊNCIA</p><h2>Continue em movimento.</h2>
+        <div class="instructions"><p><kbd>A</kbd> <kbd>←</kbd> / <kbd>D</kbd> <kbd>→</kbd> Trocar de faixa</p><p><kbd>ESPAÇO</kbd> <kbd>↑</kbd> Saltar barreiras baixas amarelas</p><p><kbd>S</kbd> <kbd>↓</kbd> Deslizar sob vigas vermelhas</p><p><kbd>ESC</kbd> Pausar / continuar · <kbd>R</kbd> Reiniciar após colisão</p></div>
+        <p>Desvie dos obstáculos altos. Cada componente ciano vale 75 pontos. Siga os arcos de componentes saltando barreiras e as trilhas baixas deslizando sob estruturas. Outras trilhas indicam mudanças de faixa. Há sempre uma faixa livre: a coleta é opcional. A velocidade aumenta com a distância.</p>
+        <button id="help-close" class="primary">ENTENDIDO <span>↗</span></button>
+      </dialog>
+      <dialog id="settings" aria-labelledby="settings-title">
+        <p class="eyebrow">CONFIGURAÇÃO DA UNIDADE</p><h2 id="settings-title">Seu sistema. Seu ritmo.</h2>
+        <label class="setting-row" for="audio-enabled">Áudio e música ambiente <input id="audio-enabled" type="checkbox" checked></label>
+        <label class="setting-row" for="volume">Volume <input id="volume" type="range" min="0" max="1" step="0.05" value="0.45"></label>
+        <label class="setting-row" for="music-enabled">Música ligada <input id="music-enabled" type="checkbox" checked></label>
+        <label class="setting-row" for="credits-enabled">Créditos automáticos após o pódio <input id="credits-enabled" type="checkbox" checked></label>
+        <label class="setting-row" for="music-volume">Volume da música <input id="music-volume" type="range" min="0" max="1" step="0.05" value="0.45"></label>
+        <label class="setting-row" for="effects-volume">Volume dos efeitos <input id="effects-volume" type="range" min="0" max="1" step="0.05" value="0.7"></label>
+        <label class="setting-row" for="music-track">Trilha sonora <select id="music-track"></select></label>
+        <label class="local-track-button" for="local-music">+ ADICIONAR ÁUDIO LOCAL<input type="file" id="local-music" accept="audio/*" multiple></label>
+        <p class="settings-note" id="local-music-note">Composições originais sintetizadas. Arquivos próprios ficam apenas nesta sessão.</p>
+        <label class="setting-row" for="quality">Qualidade gráfica <select id="quality"><option value="eco">Econômica</option><option value="standard" selected>Padrão</option><option value="high">Alta</option></select></label>
+        <p class="settings-note">Use Econômica para reduzir a resolução de renderização e desligar sombras. A composição permanece em 16:9.</p>
+        <button id="settings-close" class="primary">VOLTAR <span>↗</span></button>
+      </dialog>
+      <dialog id="chapters" aria-labelledby="chapters-title"><p class="eyebrow">MODO HISTÓRIA</p><h2 id="chapters-title">Selecionar fase da campanha</h2><label for="story-chapter">Escolha o trecho</label><select id="story-chapter" size="8"></select><p>O início da campanha mantém a partida normal. Os outros trechos permitem avaliar cenas e jogar sem alterar seu recorde.</p><div class="chapter-actions"><button id="chapter-start" class="primary">INICIAR TRECHO <span>↗</span></button><button id="chapters-close" class="secondary">VOLTAR</button></div></dialog>
+      <section id="error" hidden role="alert"><h2>Não foi possível iniciar o 3D.</h2><p id="error-message"></p><p>Use um navegador atualizado com aceleração gráfica e abra o projeto pelo servidor local.</p></section>
+    </div>
+  </main>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

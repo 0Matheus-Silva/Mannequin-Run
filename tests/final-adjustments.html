@@ -1,0 +1,65 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Validação dos ajustes finais</title><script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script></head><body><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+import * as THREE from 'three';
+import { SECTORS } from '../src/environments/Sectors.js';
+import { createPattern, canCollect, overlapsPlayer, OBSTACLES } from '../src/obstacles/Collision.js';
+import { PlayerController, LANE_WIDTH } from '../src/player/PlayerController.js';
+import { entranceState } from '../src/story/Campus.js';
+import { arrivalTravel } from '../src/story/StoryFinale.js';
+const rows=[],check=(ok,label)=>{if(!ok)throw Error(label);rows.push('PASS '+label);};
+try{
+  check(SECTORS.map(s=>s.name).join('|')==='LABORATÓRIO ABANDONADO|CIDADE EM RUÍNAS|COMPLEXO INDUSTRIAL|ZONA CONTAMINADA','Nomes exatos dos quatro setores em português');
+  check(entranceState(60)===0&&entranceState(30)>.4&&entranceState(15)===1&&entranceState(0)===1,'Entrada abre antecipadamente e fica livre antes da travessia');
+  check(Math.abs(arrivalTravel(.001,28)/.001-28)<.01&&arrivalTravel(18,28)===180,'Chegada mantém velocidade inicial e desacelera suavemente');
+  const kinds=new Set();
+  for(let index=0;index<600;index++){
+    const pattern=createPattern(index,()=>((index*17)%599)/599);kinds.add(pattern.route);
+    if(pattern.obstacles.some(o=>o.lane===pattern.safeLane)||pattern.obstacles.length>2)throw Error('Faixa segura perdida');
+    for(const point of pattern.collectibles)for(const obstacle of pattern.obstacles){const b=OBSTACLES[obstacle.type];if(point.lane===obstacle.lane&&Math.abs(point.z)<b.depth/2+.3&&point.y>b.bottom-.12&&point.y<b.top+.12)throw Error('Item dentro de sólido');}
+    for(const speed of [12,20,28]){
+      const player=new PlayerController(),points=pattern.collectibles.map(p=>({...p,collected:false}));
+      const order=[...points].sort((a,b)=>b.z-a.z);player.lane=order[0].lane;player.x=player.lane*LANE_WIDTH;
+      let z=-85,acted=false,crashed=false;
+      while(z<10){
+        const dt=1/240,previous=z;z+=speed*dt;
+        if(pattern.route==='weave'){const next=order.find(p=>!p.collected);if(next)player.lane=next.lane;}
+        if(!acted&&z>=-speed*.3&&(pattern.route==='jump'||pattern.route==='slide')){player[pattern.route]();acted=true;}
+        player.update(dt);
+        if(pattern.obstacles.some(o=>overlapsPlayer(player,{...o,x:o.lane*LANE_WIDTH},previous,z)))crashed=true;
+        for(const point of points)if(!point.collected&&canCollect(player,point.lane*LANE_WIDTH,previous+point.z,z+point.z,point.y,point.action))point.collected=true;
+      }
+      if(crashed||points.some(p=>!p.collected))throw Error('Rota inalcançável '+index+' '+pattern.route+' velocidade '+speed+' coleta '+points.map(p=>p.collected));
+    }
+  }
+  check(kinds.size===4,'600 padrões variados mantêm faixa livre, itens fora dos sólidos e rotas coletáveis em 12/20/28 m/s');
+  const p=new PlayerController();check(!canCollect(p,0,-1,1,3.15,'jump')&&!canCollect(p,0,-1,1,.45,'slide'),'Trilhas de salto e deslize exigem a ação correspondente');
+  const frame=document.querySelector('#frame');for(let i=0;i<150;i++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+  const doc=frame.contentDocument,ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);const game=await ready;game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);game.clock.getDelta=()=>0;
+  check(!/RESEARCH|HOW TO PLAY|GAME OVER|RESTART|RESUME|MAIN MENU|ÁUDIO ON/.test(doc.body.textContent),'Interface apresentada sem rótulos antigos em inglês');
+  for(let i=0;i<4;i++){game.ui.sector(i,true);check(doc.querySelector('#sector-label').textContent==='SETOR 0'+(i+1)+' — '+SECTORS[i].name,'Identificação completa do setor '+(i+1));}
+  game.chooseMode('story');game.startRun();game.track.reset();game.session.distance=2280;game.update();
+  check(game.state==='playing'&&game.finale.root.visible&&game.finale.root.position.z===-120,'Campus aparece ao longe durante gameplay ativo');
+  const campusBefore=game.finale.root.position.z;game.motion.move(1);game.advance(.25);game.update();check(game.motion.x>2&&game.finale.root.position.z>campusBefore,'Troca de faixa e aproximação continuam antes do final');
+  game.startEnding();game.update();const cameraBefore=game.camera.position.clone();game.finale.advance(.001);game.update();check(game.camera.position.distanceTo(cameraBefore)<.02,'Câmera da chegada não salta ao iniciar');
+  game.finale.advance(5);game.update();check(game.finale.entryOpen>.5&&game.finale.entryOpen<1,'Portas integradas se movem durante aproximação');
+  game.finale.advance(3);game.update();check(game.finale.entryOpen===1&&Math.abs(game.finale.entryDoors[0].position.x)>6,'Entrada totalmente aberta com três faixas livres');
+  game.finale.advance(5);game.update();check(game.finale.phase==='interior'&&!game.world.root.visible,'Travessia continua pelo interior');
+  game.finale.advance(13);game.update();
+  check(game.finale.others[0].root.userData.kind==='monitor-chest'&&game.finale.others[1].root.userData.kind==='plasma-speaker','Segundo lugar é o baú e terceiro é o projeto de plasma');
+  check(game.finale.others[0].screen.userData.monitor&&game.finale.others[0].lid.rotation.x<-.9,'Baú mantém boca aberta e monitor identificável antes da reação');
+  game.finale.advance(8);game.update();
+  check(game.player.root.position.y===2.16&&game.player.arms[1].pivot.rotation.x<-2&&game.finale.trophy.visible,'Protagonista ocupa centro e levanta taça');
+  const ceremonyTime=game.finale.elapsed;game.finale.elapsed=21;game.update();
+  // Verify all three places in the opening wide shot.
+  game.camera.updateMatrixWorld(true);game.scene.updateMatrixWorld(true);
+  const fits=(object,margin=.92)=>{const b=new THREE.Box3().setFromObject(object);return [b.min.x,b.max.x].every(x=>[b.min.y,b.max.y].every(y=>[b.min.z,b.max.z].every(z=>{const v=new THREE.Vector3(x,y,z).project(game.camera);return Math.abs(v.x)<margin&&Math.abs(v.y)<margin&&v.z>-1&&v.z<1;})));};
+  check(game.finale.podiumParts.every(o=>fits(o))&&game.finale.rankSigns.every(o=>fits(o)),'Pódio e números 2–1–3 cabem completamente no enquadramento');
+  check([game.player.root,game.finale.trophy,...game.finale.others.map(bot=>bot.root)].every(o=>fits(o)),'Três participantes e taça ficam inteiros no quadro');
+  check(game.finale.podiumParts.every(o=>new THREE.Box3().setFromObject(o).min.y>=.359),'Bases do pódio ficam sobre o palco sem afundar no piso');
+  const left=new THREE.Box3().setFromObject(game.finale.others[0].root),right=new THREE.Box3().setFromObject(game.finale.others[1].root);check(left.min.y>=1.55&&right.min.y>=1.30,'Participantes apoiados nas plataformas laterais');
+  game.finale.elapsed=ceremonyTime;game.finale.advance(5);game.update();check(game.state==='victory'&&doc.querySelector('#victory-panel').getBoundingClientRect().top>400,'Vitória usa faixa inferior sem encobrir os participantes');
+  game.setState('menu');game.chooseMode('infinite');game.startRun();game.track.reset();game.session.distance=2390;game.update();game.advance(1);check(game.state==='playing'&&!game.finale.root.visible,'Infinito não mostra chegada nem interrompe a corrida');
+  const activeRoutes=new Set();game.track.reset();for(let index=3;index<7;index++){game.track.index=index;game.track.spawn();const row=game.track.rows.find(r=>r.active);activeRoutes.add(row.route);if(row.chips.some(c=>!Number.isFinite(c.userData.baseY)))throw Error('Metadados ausentes');row.active=false;}
+  check(activeRoutes.size===4,'Gerador real aplica os quatro padrões aos componentes do pool');
+  document.querySelector('#result').textContent=rows.join('\n')+'\nALL PASS';
+}catch(e){document.querySelector('#result').textContent=rows.join('\n')+'\nFAIL '+e.stack;}
+</script></body></html>

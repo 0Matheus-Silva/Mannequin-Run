@@ -1,0 +1,43 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Manequim físico, capítulos e créditos</title><script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script></head><body><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+import * as THREE from 'three';
+import { STORY_CHAPTERS } from '../src/game/Chapters.js';
+import { Settings } from '../src/utils/Settings.js';
+const rows=[],check=(v,n)=>{if(!v)throw Error(n);rows.push('PASS '+n);};
+try{
+  const frame=document.querySelector('#frame');for(let i=0;i<150;i++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+  const doc=frame.contentDocument,ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);const game=await ready;game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);game.clock.getDelta=()=>0;
+  check(game.player.root.userData.design==='physical-mannequin'&&game.player.hardware.userData.kind==='open-computer','Modelo físico com gabinete real integrado ao tronco');
+  check(game.player.mask.userData.kind==='cyan-segmented-mask'&&game.player.mask.children.length>8&&game.player.glow.emissiveIntensity>0,'Máscara possui traços ciano curvos e segmentados');
+  check(game.player.hood.children.length>=4&&game.player.graphite.roughness>.8&&game.player.metal.color.r>.7,'Capuz, roupa de tecido escuro e manequim branco');
+  check(game.player.arms.every(a=>a.fingers.length===4)&&game.player.legs.length===2,'Mãos brancas articuladas e pernas compatíveis com rig');
+  const finger=game.player.arms[0].fingers[0],fingerAngle=finger.rotation.x;game.player.update(.25,false,game.motion);check(finger.parent===game.player.arms[0].hand&&finger.rotation.x!==fingerAngle,'Dedos permanecem no rig e animam após agrupamento das malhas');
+  check(STORY_CHAPTERS.length===8&&doc.querySelector('#story-chapter').options.length===8,'Oito capítulos disponíveis no menu');
+  doc.querySelector('#chapters-open').click();const bounds=doc.querySelector('#chapters').getBoundingClientRect();check(doc.querySelector('#chapters').open&&bounds.top>=0&&bounds.bottom<=540,'Seletor abre e cabe na composição 16:9');
+  doc.querySelector('#chapters-close').click();check(game.state==='menu'&&!doc.querySelector('#chapters').open,'Fechar seletor preserva menu');
+  const start=id=>{game.setState('menu');doc.querySelector('#chapters-open').click();doc.querySelector('#story-chapter').value=id;doc.querySelector('#chapter-start').click();};
+  start('campaign');check(game.state==='starting'&&!game.session.practice&&game.session.distance===0,'Início da campanha mantém abertura e fluxo normal');game.advance(2.65);check(game.state==='playing','Abertura normal entra na corrida');
+  for(const [id,sector] of [['laboratory',0],['city',1],['industry',2],['contamination',3]]){
+    start(id);check(game.state==='playing'&&game.session.distance===sector*600&&game.world.activeSector===sector&&game.world.segments.every(s=>s.userData.sector===Math.floor(Math.max(0,sector*600-s.position.z+8)/600)%4),'Capítulo '+id+' prepara cenário e distância corretos');
+    check(!doc.querySelector('#hud').hidden&&game.session.score===0&&game.session.practice,'Capítulo '+id+' mantém HUD e pontuação sem distância prévia');
+  }
+  game.track.reset();game.action('right');game.action('jump');game.advance(.15);check(game.motion.x>2&&game.motion.y>0,'Controle lateral e salto funcionam em capítulo');
+  game.motion.reset();game.action('slide');game.advance(.15);game.update();check(game.motion.height<1.18&&new THREE.Box3().setFromObject(game.player.root).max.y<1.18,'Roupa e capuz passam sob estrutura de deslize');
+  const best=game.records.best;game.crash();game.advance(1.5);check(game.state==='gameover'&&game.records.best===best,'Colisão de trecho abre resultados sem alterar recorde');game.action('restart');check(game.state==='playing'&&game.session.distance===1800&&game.activeChapter==='contamination','Reinício retorna ao capítulo escolhido');
+  start('arrival');check(game.state==='playing'&&game.finale.root.visible&&game.finale.root.position.z===-100,'Chegada mostra campus ao longe durante corrida');
+  game.pause();const d=game.session.distance;game.advance(2);check(game.session.distance===d,'Pausa congela capítulo de chegada');game.resume();game.track.reset();game.session.distance=2399.99;game.advance(.01);check(game.state==='ending','Chegada continua até a sequência final');
+  start('entrance');check(game.state==='ending'&&game.finale.entryOpen>.5&&game.finale.entryOpen<1,'Entrada começa com porta abrindo antes da passagem');game.advance(4);game.update();check(game.finale.entryOpen===1,'Personagem atravessa acesso aberto');
+  start('ceremony');check(game.state==='ending'&&game.finale.elapsed===21&&game.player.root.position.y===2.16&&game.finale.others.length===2,'Cerimônia inicia no pódio com os três participantes');
+  check(doc.querySelector('#credits-roll').hidden,'Créditos aguardam as apresentações dos concorrentes');game.advance(13.7);game.update();check(doc.querySelector('#credits-roll').hidden,'Créditos aguardam o levantamento completo da taça');game.advance(.1);game.update();check(!doc.querySelector('#credits-roll').hidden,'Créditos começam assim que a taça fica erguida');
+  const text=doc.querySelector('#credits-content').textContent;check(['CDC2NA','Fabiano Matheus de Camargo Silva','Pedro Henrique Freitas de Oliveira','Vitor Barioni Ferraz'].every(name=>text.includes(name)),'Título e três nomes corretos nos créditos');
+  const before=doc.querySelector('#credits-content').style.transform;game.advance(2);game.update();check(doc.querySelector('#credits-content').style.transform!==before,'Nomes sobem na tela');
+  game.pause();const frozen=game.finale.creditElapsed;game.advance(3);game.update();check(game.finale.creditElapsed===frozen,'Pausa congela a rolagem dos créditos');game.resume();game.advance(3);game.update();check(game.state==='victory'&&game.finale.creditElapsed>frozen,'Créditos continuam na tela de vitória');
+  doc.querySelector('#credits-replay').click();game.update();check(game.finale.creditElapsed===0&&!doc.querySelector('#credits-roll').hidden,'Ver créditos reinicia a rolagem');
+  game.action('pause');game.advance(1);game.update();check(game.state==='paused'&&game.finale.creditElapsed===0,'Também é possível pausar créditos após a vitória');game.action('pause');game.advance(31);game.update();check(doc.querySelector('#credits-roll').hidden,'Créditos saem de tela ao terminar');
+  game.setState('menu');check(doc.querySelector('#credits-roll').hidden,'Menu limpa os créditos');const toggle=doc.querySelector('#credits-enabled');toggle.checked=false;toggle.dispatchEvent(new Event('change'));check(!game.settings.credits,'Opção desativa créditos automáticos');
+  start('ceremony');game.advance(15);game.update();check(doc.querySelector('#credits-roll').hidden,'Opção desativada respeitada após o início previsto dos créditos');doc.querySelector('#credits-replay').click();game.update();check(!doc.querySelector('#credits-roll').hidden,'Reprodução manual funciona com automático desligado');
+  const mem=new Map(),storage={getItem:k=>mem.get(k),setItem:(k,v)=>mem.set(k,v)},settings=new Settings(storage);settings.credits=false;settings.save();check(new Settings(storage).credits===false,'Preferência de créditos persiste');
+  game.setState('menu');game.chooseMode('infinite');game.beginRun();game.advance(2.65);check(game.state==='playing'&&!game.session.practice&&game.activeChapter==='campaign'&&!game.finale.root.visible,'Infinito mantém início normal e não herda capítulo');
+  check(!game.renderer.info.programs.some(p=>p.diagnostics?.runnable===false),'Modelo atualizado compila no renderizador');
+  document.querySelector('#result').textContent=rows.join('\n')+'\nALL PASS';
+}catch(e){document.querySelector('#result').textContent=rows.join('\n')+'\nFAIL '+e.stack;}
+</script></body></html>

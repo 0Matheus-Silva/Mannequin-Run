@@ -1,0 +1,50 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Validação do assistente</title><script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script></head><body><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+import { PCMResampler } from '../src/assistant/audio/Resampler.js';
+import { decodePCM,VoiceOutput } from '../src/assistant/audio/VoiceOutput.js';
+import { GeminiProvider,pcmBase64,providerError } from '../src/assistant/GeminiProvider.js';
+import { Microphone } from '../src/assistant/audio/Microphone.js';
+const rows=[],check=(v,n)=>{if(!v)throw Error(n);rows.push('PASS '+n);document.querySelector('#result').textContent=rows.join('\n')+'\nRUNNING';};
+try{
+  const resampler=new PCMResampler(48000);let count=0;for(let i=0;i<375;i++)count+=resampler.push(new Float32Array(128).fill(.5)).length;
+  check(count===16000,'Resampling contínuo converte 48 kHz em 16 kHz sem perder amostras entre blocos');
+  const data=decodePCM(pcmBase64(new Int16Array([-32768,0,32767])));check(data[0]===-1&&data[1]===0&&data[2]>.99,'PCM16 little endian e base64 preservam sinal');
+  const events=[],provider=new GeminiProvider(e=>events.push(e));provider.handle({serverContent:{interrupted:true,inputTranscription:{text:'Oi'},outputTranscription:{text:'Pode chegar'},modelTurn:{parts:[{inlineData:{data:'AAA=',mimeType:'audio/pcm;rate=24000'}}]},turnComplete:true}});
+  check(['interrupt','transcript','transcript','audio','turn'].every((type,i)=>events[i].type===type),'Adaptador Live processa interrupção, duas transcrições, áudio e fim no mesmo evento');
+  check(providerError(429).includes('pago')&&providerError(403).includes('bloqueada'),'Cota e bloqueio são distintos e não prometem fallback pago');
+  let networkCalls=0;const blocked=new GeminiProvider(()=>{},{fetcher:async()=>{networkCalls++;return{ok:true,json:async()=>({ready:false,reason:'Revisão pendente'})};},Socket:class{constructor(){throw Error('WebSocket não deveria abrir');}}});
+  try{await blocked.connect();throw Error('Conexão bloqueada aceita');}catch(error){check(error.message==='Revisão pendente'&&networkCalls===1,'Configuração bloqueada não abre WebSocket nem emite token');}
+  const denied=new Microphone({mediaDevices:{getUserMedia:async()=>{throw new DOMException('Negado','NotAllowedError');}},Context:class{}});try{await denied.start(()=>{});}catch(e){check(e.name==='NotAllowedError'&&!denied.active,'Microfone negado tratado sem captura residual');}
+  let captured=0;const nativeMic=new Microphone();await nativeMic.start(pcm=>{if(pcm.length===1024)captured++;});for(let n=0;n<30&&!captured;n++)await new Promise(r=>setTimeout(r,100));const nativeTrack=nativeMic.stream.getTracks()[0];nativeMic.stop();check(captured>0&&nativeTrack.readyState==='ended','AudioWorklet captura blocos PCM reais do dispositivo sintético e libera a faixa');
+  const frame=document.querySelector('#frame');for(let n=0;n<180;n++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+  const doc=frame.contentDocument,ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));const script=doc.createElement('script');script.type='module';script.textContent="import {game,assistant} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:{game,assistant}}));";doc.body.append(script);let {game,assistant}=await ready;if(!assistant)throw Error('Assistente não inicializou');
+  game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);game.clock.getDelta=()=>0;const session=assistant.session;session.voice.speakLocal=()=>false;
+  check(doc.querySelector('#assistant-panel').hidden&&!session.active&&!session.microphone.active,'Página inicia sem conversa, captura ou fala automática');
+  game.startRun();const before=game.session.distance;doc.querySelector('#assistant-open').click();check(game.state==='playing'&&!doc.querySelector('#assistant-panel').hidden,'Abrir painel mantém gameplay ativo');
+  const size=game.renderer.getSize({set(x,y){this.x=x;this.y=y;return this;}});check(size.x===1920&&size.y===1080&&game.camera.aspect===16/9,'Painel preserva canvas e câmera 16:9');
+  const panel=doc.querySelector('#assistant-panel').getBoundingClientRect();check(panel.right<=960&&panel.bottom<=540&&panel.left>680,'Painel lateral cabe na composição sem cobrir a faixa central');
+  await session.start('demo');check(session.active&&doc.querySelector('#assistant-disclosure').textContent.includes('roteirizadas'),'Demonstração identificada como roteirizada e não como IA real');
+  const input=doc.querySelector('#assistant-input');input.value='Como jogar?';input.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyD',bubbles:true}));check(game.motion.lane===0,'Digitar no painel não muda a faixa');
+  game.action('right');game.advance(.2);check(game.motion.x>2&&game.session.distance>before,'Controles e simulação continuam com conversa aberta');
+  await session.send('Como jogar?');check(session.history.at(-1).text.includes('Espaço'),'Personagem responde controles a partir da base oficial');
+  await session.send('Qual processador e quanta RAM?');check(session.history.at(-1).text.includes('Não há especificações'),'Hardware desconhecido não recebe especificações inventadas');
+  await session.send('Qual o número da loteria?');check(session.history.at(-1).text.includes('Não tenho'),'Pergunta fora da base admite limitação');
+  await session.send('<img src=x onerror=alert(1)>');check(!doc.querySelector('#assistant-history img'),'Histórico usa texto seguro, sem interpretar HTML do visitante');
+  const greeting1=await session.provider.reply('oi'),greeting2=await session.provider.reply('oi');check(greeting1!==greeting2,'Saudações variam');
+  await session.present();check(session.history.at(-1).text===session.knowledge.presentation,'Apresentação preparada aparece transcrita e convida perguntas');
+  const audio=session.voice.audio;check(!!audio&&audio.src.endsWith('presentation.wav'),'Apresentação usa arquivo de áudio local');session.interrupt();check(!session.voice.audio,'Interromper fala para a apresentação imediatamente');
+  await session.toggleMic();check(session.microphone.active&&doc.querySelector('#assistant-mic').getAttribute('aria-pressed')==='true','Microfone sintético obtém permissão e mostra atividade');
+  const track=session.microphone.stream.getTracks()[0];assistant.minimize();check(!session.microphone.active&&track.readyState==='ended'&&doc.querySelector('#assistant-panel').hidden,'Minimizar libera o microfone e recupera a área do jogo');
+  assistant.expand();check(session.history.length>0,'Expandir mantém contexto da sessão atual');
+  const output=new VoiceOutput();await output.unlock();output.enqueue(pcmBase64(new Int16Array(2400).fill(1000)));check(output.nodes.size===1,'Bloco PCM gera reprodução agendada');output.stop();check(output.nodes.size===0&&output.nextTime===0,'Interromper limpa a fila de áudio');output.dispose();
+  for(let n=0;n<70;n++)session.message('user','Mensagem '+n);check(session.history.length===60&&doc.querySelector('#assistant-history').children.length===60,'Histórico e DOM têm limite de memória');
+  session.end();check(!session.active&&session.history.length===0&&!session.microphone.active,'Encerrar limpa histórico e recursos da sessão');
+  doc.querySelector('#assistant-provider').value='live';assistant.mode('live');await session.start('live',false);check(session.state==='error'&&!session.active,'Processamento externo exige aviso aceito');
+  await session.start('live',true);check(session.state==='error'&&!session.microphone.active,'API não configurada retorna erro e mantém microfone desligado');
+  check(doc.querySelector('#assistant-end').getBoundingClientRect().bottom<=doc.querySelector('#assistant-panel').getBoundingClientRect().bottom,'Controles continuam dentro do painel com aviso e erro Live expandidos');
+  doc.querySelector('#assistant-provider').value='demo';await session.start('demo');check(session.active,'Modo local recupera após erro da API');
+  session.end();game.setState('menu');game.chooseMode('story');game.beginRun();game.advance(2.65);check(game.state==='playing'&&game.session.mode==='story','História preservada após conversa');
+  game.setState('menu');game.chooseMode('infinite');game.beginRun();game.advance(2.65);check(game.state==='playing'&&game.session.mode==='infinite','Infinito preservado após conversa');assistant.minimize();
+  document.querySelector('#result').textContent=rows.join('\n')+'\nALL PASS';
+}catch(e){document.querySelector('#result').textContent=rows.join('\n')+'\nFAIL '+e.stack;}
+window.benchmarkDone=true;
+</script></body></html>

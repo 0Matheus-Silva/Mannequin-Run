@@ -1,0 +1,50 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Visual package acceptance</title><script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script></head><body><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+import * as THREE from 'three';
+import { passageState } from '../src/environments/Passages.js';
+import { storyComplete } from '../src/game/Progression.js';
+import { endingPhase } from '../src/story/StoryFinale.js';
+import { Settings } from '../src/utils/Settings.js';
+const rows=[];const check=(v,n)=>{if(!v)throw Error(n);rows.push('PASS '+n);};
+try{
+  check(!storyComplete('infinite',24000)&&storyComplete('story',2400),'Only story has a finite ending');
+  check(passageState(490).visible&&passageState(530).warning,'Door becomes visible and warns in advance');
+  check(passageState(570).open===1&&passageState(590).open===1,'Door fully opens before arrival with safe fallback');
+  check(passageState(600).boundary===600&&passageState(617).open===1&&passageState(618).boundary===1200,'Gate stays open behind camera until crossing completes');
+  check([0,12,18,32,35].map(endingPhase).join(',')==='arrival,interior,podium,trophy,victory','Ending has ordered narrative phases');
+  const mem=new Map(),storage={getItem:k=>mem.get(k),setItem:(k,v)=>mem.set(k,v)};const settings=new Settings(storage);settings.mode='story';settings.music=false;settings.musicVolume=.2;settings.effectsVolume=.8;settings.track='home';settings.save();const loaded=new Settings(storage);
+  check(loaded.mode==='story'&&!loaded.music&&loaded.track==='home'&&loaded.effectsVolume===.8,'Mode and independent audio settings persist');
+  const frame=document.querySelector('#frame');for(let i=0;i<150;i++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+  const doc=frame.contentDocument,ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);const game=await ready;check(!!game,'Game initializes with package systems');game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);
+  const render=game.render.bind(game);game.render=()=>{};game.clock.getDelta=()=>1/60;
+  doc.querySelector('[data-mode=story]').click();check(game.settings.mode==='story'&&doc.querySelector('[data-mode=story]').getAttribute('aria-pressed')==='true','Story selection is clear and functional');
+  doc.querySelector('#play').click();check(game.state==='starting'&&game.session.mode==='story','Selected mode enters existing Play cinematic');game.advance(2.65);check(game.state==='playing','Story begins with full gameplay');
+  game.track.reset();game.session.distance=570;game.passages.update(570,'story');check(game.passages.state.open===1&&game.passages.leaves[0].position.x<-7,'Physical door leaves move clear of all three lanes');
+  for(let sector=0;sector<4;sector++){
+    const models=['block','jump','slide'].map(type=>game.track.obstacle(type,sector));
+    check(models.every(m=>m.userData.type&&m.userData.hitbox),'Sector '+sector+' has three thematic obstacle categories');
+    check(models.every(m=>{const b=new THREE.Box3().setFromObject(m),s=b.getSize(new THREE.Vector3()),h=m.userData.hitbox;return s.x<=h.width+.035&&s.z<=h.depth+.035&&b.max.y<=h.top+.035;}),'Sector '+sector+' models preserve collider envelope');
+  }
+  check(game.atmosphere.sun.isMesh&&game.atmosphere.root.children.length>5,'City sky has a real sun mesh and cloud volumes');game.atmosphere.update(780);check(game.atmosphere.sun.visible&&game.atmosphere.cloudMaterial.opacity>0,'Sun and clouds appear in city');
+  game.startRun();game.crash();check(game.state==='falling'&&doc.querySelector('#over-panel').hidden,'Impact is followed by fall before results');
+  for(let i=0;i<91;i++)game.update();check(game.state==='gameover','Controlled fall ends in Game Over');const fallBounds=new THREE.Box3().setFromObject(game.player.body);check(fallBounds.min.y>=-.005,'Fallen robot remains above the floor');
+  game.action('restart');check(game.state==='playing'&&game.session.mode==='story','Restart preserves selected mode');
+  game.track.reset();game.session.distance=2399.99;game.advance(.02);check(game.state==='ending'&&game.session.ended&&game.session.distance===2400,'Completing sector four starts story arrival and freezes score');
+  const pieces=root=>{let n=0;root.traverse(node=>{if(node.isMesh)n+=node.isInstancedMesh?node.count:1;});return n;};check(pieces(game.finale.campus)>100&&pieces(game.finale.hall)>15,'Campus and entrance are reconstructed 3D geometry');
+  game.advance(5);game.update();check(game.finale.phase==='arrival'&&game.finale.root.position.z>0,'Campus approaches continuously');game.pause();const t=game.finale.elapsed;game.advance(2);check(game.finale.elapsed===t,'Ending pauses without losing progress');game.resume();
+  game.advance(8);game.update();check(game.finale.phase==='interior'&&!game.world.root.visible,'Portal leads into foyer and auditorium');
+  game.advance(19);game.update();check(game.finale.phase==='trophy'&&game.finale.others.length===2&&game.finale.trophy.visible,'Three exhibition projects share podium and protagonist receives trophy');
+  game.advance(4);game.update();check(game.player.arms[1].pivot.rotation.x<-2,'Winner raises trophy');
+  game.advance(6);game.update();check(game.state==='victory'&&!doc.querySelector('#victory-panel').hidden,'Ceremony ends on victory screen');
+  check(doc.querySelector('#victory-panel').textContent.includes('UniFECAF')&&doc.querySelector('#victory-panel').textContent.includes('EXPOTECH 2026'),'Victory uses exact institution and event names');
+  game.setState('menu');doc.querySelector('[data-mode=infinite]').click();game.startRun();game.track.reset();game.session.distance=2401;game.advance(.01);check(game.state==='playing'&&!game.finale.root.visible,'Infinite mode cycles without forced ceremony');
+  const audio=game.audio;audio.setMusicEnabled(false);audio.setMusicVolume(.25);audio.setEffectsVolume(.8);check(!audio.musicEnabled&&audio.musicVolume===.25&&audio.effectsVolume===.8,'Music and effects have independent controls');check(audio.selectTrack('rust')&&!audio.selectTrack('unknown'),'Original playlist selects valid tracks');
+  const music=doc.querySelector('#music-enabled'),volume=doc.querySelector('#effects-volume'),track=doc.querySelector('#music-track');music.checked=false;music.dispatchEvent(new Event('change'));volume.value='.35';volume.dispatchEvent(new Event('input'));track.value='home';track.dispatchEvent(new Event('change'));
+  check(!game.settings.music&&audio.effectsVolume===.35&&game.settings.effectsVolume===.35&&audio.track==='home'&&game.settings.track==='home','Music checkbox, effects slider and playlist UI update engine and preferences');
+  const files=audio.addLocalFiles([new File(['local'],'my-track.wav',{type:'audio/wav'}),new File(['text'],'notes.txt',{type:'text/plain'})]);check(files.length===1&&files[0].url.startsWith('blob:'),'Own tracks are local object URLs with no upload');
+  game.setState('menu');game.render=render;render();check(!game.renderer.info.programs.some(p=>p.diagnostics?.runnable===false),'Updated materials and sky compile');
+  const resources=[];for(let cycle=0;cycle<3;cycle++){for(const sector of [1,2,3,0]){game.world.segments.forEach((_,i)=>game.world.replace(i,sector));render();}resources.push({...game.renderer.info.memory});}
+  check(resources[1].geometries===resources[2].geometries&&resources[1].textures===resources[2].textures,'GPU geometry and texture counts stabilize across complete sector cycles');
+  rows.push('METRIC stable_gpu_geometries='+resources[2].geometries+' textures='+resources[2].textures);
+  document.querySelector('#result').textContent=rows.join('\n')+'\nALL PASS';
+}catch(e){document.querySelector('#result').textContent=rows.join('\n')+'\nFAIL '+e.stack;}
+</script></body></html>

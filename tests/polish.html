@@ -1,0 +1,44 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Polish checks</title><script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script></head><body><pre id="result">RUNNING</pre><iframe id="game" src="../index.html" width="960" height="540"></iframe><script type="module">
+import * as THREE from 'three';
+import { AudioEngine } from '../src/audio/AudioEngine.js';
+import { Effects } from '../src/world/Effects.js';
+import { Settings } from '../src/utils/Settings.js';
+const results=[];const check=(v,n)=>{if(!v)throw Error(n);results.push('PASS '+n);};
+try{
+  const audio=new AudioEngine();check(audio.context===null,'Audio context is not created on page load');
+  audio.setEnabled(false);check(await audio.unlock()===false&&audio.context===null,'Disabled audio does not initialize context');
+  audio.setEnabled(true);audio.initialize();check(!!audio.context&&audio.drones.length===2,'Ambient graph creates bounded persistent sources');
+  for(let sector=0;sector<4;sector++)audio.setSector(sector,false);
+  check(audio.sector===3,'All four ambient presets are accepted');
+  for(const effect of ['jump','slide','move','collect','crash'])audio.effect(effect);
+  check(audio.voices.size<=12,'Sound effect voice pool is capped');audio.setEnabled(false);audio.setVolume(5);check(audio.volume===1&&!audio.enabled,'Volume clamps and mute switches off');
+  await audio.dispose();check(audio.context===null&&audio.voices.size===0,'Audio context cleanup');
+  const effects=new Effects(new THREE.Scene());for(let i=0;i<40;i++)effects.burst(0,1,0,true);
+  check(effects.positions.length===288&&effects.life.length===96,'Particle pool remains fixed under repeated bursts');
+  effects.update(2);check(effects.life.every(x=>x<=0),'Particles expire');effects.reset();check(effects.positions.every(x=>x===-1000),'Particle reset removes remnants');
+  const mem=new Map();const storage={getItem:k=>mem.get(k),setItem:(k,v)=>mem.set(k,v)};
+  const settings=new Settings(storage);settings.audio=false;settings.volume=.25;settings.quality='eco';settings.save();const restored=new Settings(storage);
+  check(!restored.audio&&restored.volume===.25&&restored.quality==='eco','User settings persist');
+  const bad=new Settings({getItem:()=>'{broken'});check(bad.quality==='standard','Malformed settings recover to defaults');
+  const frame=document.querySelector('#game');for(let i=0;i<100;i++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+  const doc=frame.contentDocument;const ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));
+  const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);const game=await ready;game.renderer.setAnimationLoop(null);
+  check(game.audio.context===null,'Menu leaves audio waiting for interaction');
+  const bounds=doc.querySelector('#stage').getBoundingClientRect();
+  check(Math.abs(bounds.left)<1&&Math.abs(bounds.top)<1&&Math.abs(bounds.width-960)<1&&Math.abs(bounds.height-540)<1,'Fixed composition stays centered in a 960 by 540 window');
+  let batches=0;game.world.root.traverse(node=>{if(node.isInstancedMesh)batches++;});
+  check(batches>0,'Static architecture uses instanced batches');
+  doc.querySelector('#settings-open').click();check(doc.querySelector('#settings').open,'Settings dialog opens');
+  const dialogBounds=doc.querySelector('#settings').getBoundingClientRect();
+  check(Math.abs(dialogBounds.width-380)<1&&dialogBounds.top>=0&&dialogBounds.bottom<=540,'Top-layer dialog preserves scale and fits window');
+  const quality=doc.querySelector('#quality');quality.value='eco';quality.dispatchEvent(new Event('change'));
+  check(!game.renderer.shadowMap.enabled&&game.renderer.getPixelRatio()===.65,'Eco mode reduces resolution and disables shadows');
+  quality.value='standard';quality.dispatchEvent(new Event('change'));check(game.renderer.shadowMap.enabled&&game.renderer.getPixelRatio()===1,'Standard quality restores shadows and resolution');
+  const toggle=doc.querySelector('#audio-enabled');toggle.checked=false;toggle.dispatchEvent(new Event('change'));
+  check(!game.audio.enabled&&doc.querySelector('#audio-button').getAttribute('aria-pressed')==='false','Audio controls stay synchronized');
+  doc.querySelector('#settings-close').click();check(!doc.querySelector('#settings').open,'Settings dialog closes');
+  game.startRun();game.action('jump');game.advance(.1);check(game.motion.y>0,'Gameplay remains active with audio disabled');
+  const dimensions=game.renderer.getSize(new THREE.Vector2());check(dimensions.x===1920&&dimensions.y===1080&&game.camera.aspect===16/9,'Graphics options preserve fixed composition');
+  game.setState('menu');document.querySelector('#result').textContent=results.join('\n')+'\nALL PASS';
+}catch(e){document.querySelector('#result').textContent=results.join('\n')+'\nFAIL '+e.stack;}
+</script></body></html>

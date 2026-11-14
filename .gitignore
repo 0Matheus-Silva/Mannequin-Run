@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.tmp-*/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+# Local reference packages; the playable game is in assets/src/styles.
+/MANNEQUIN_RUN_Codex_Visual_Package/
+/MANNEQUIN_RUN_Pacote_Personagem_Fisico_e_Fases/
+/MANNEQUIN_RUN_Pacote_Personagem_Fisico_e_Fases.zip
+/_site/

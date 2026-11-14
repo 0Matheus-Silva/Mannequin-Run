@@ -1,0 +1,12 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Real-time cinematic integration</title></head><body><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+try{
+  const frame=document.querySelector('#frame');for(let n=0;n<300;n++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+  const doc=frame.contentDocument;const ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);const game=await ready;
+  game.audio.setEnabled(false);game.setQuality('standard');let frames=0;const update=game.update.bind(game);game.update=()=>{frames++;update();};const started=performance.now();doc.querySelector('#play').click();
+  for(let i=0;i<200&&game.state==='starting';i++)await new Promise(r=>setTimeout(r,100));
+  if(game.state!=='playing')throw Error('Expected playing, got '+game.state+'; timeline='+game.sequence.elapsed+'; frames='+frames+'; visibility='+frame.contentDocument.visibilityState+'; elapsed_ms='+(performance.now()-started));
+  if(Math.abs(game.player.root.rotation.y)>.01)throw Error('Incomplete turn');
+  document.querySelector('#result').textContent='PASS Native animation loop completes cinematic\nPASS Full turn precedes gameplay\nMETRIC real_elapsed_ms='+(performance.now()-started).toFixed(0)+'\nALL PASS';
+  game.renderer.setAnimationLoop(null);window.benchmarkDone=true;
+}catch(e){document.querySelector('#result').textContent='FAIL '+e.stack;window.benchmarkDone=true;}
+</script></body></html>

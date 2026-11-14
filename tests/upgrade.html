@@ -1,0 +1,59 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Cinematic upgrade checks</title><script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script></head><body><pre id="result">RUNNING</pre><iframe id="game" src="../index.html" width="960" height="540"></iframe><script type="module">
+import * as THREE from 'three';
+import { Mannequin } from '../src/player/Mannequin.js';
+import { PlayerController } from '../src/player/PlayerController.js';
+import { StartSequence,START_DURATION } from '../src/game/StartSequence.js';
+const results=[];const check=(v,n)=>{if(!v)throw Error(n);results.push('PASS '+n);};
+try{
+  const rig=new Mannequin();const motion=new PlayerController();const camera=new THREE.Vector3(3.1,2.7,6.3);
+  rig.root.rotation.y=Math.atan2(-camera.x,-camera.z);
+  rig.update(.1,false,motion,false,{cameraPosition:camera});rig.root.updateMatrixWorld(true);
+  const forward=new THREE.Vector3(0,0,-1).transformDirection(rig.head.matrixWorld);
+  const position=rig.head.getWorldPosition(new THREE.Vector3());const toward=camera.clone().sub(position).normalize();
+  check(forward.dot(toward)>.97,'Menu visor faces the camera');
+  const posture=rig.body.position.clone(),head=rig.neck.rotation.z;rig.update(.8,false,motion,false,{cameraPosition:camera});
+  check(posture.distanceTo(rig.body.position)>.001&&head!==rig.neck.rotation.z,'Idle includes breathing, weight and head movement');
+  check(rig.arms.every(arm=>arm.fingers.length===4)&&rig.legs.every(leg=>!!leg.foot),'Rig has four articulated fingers plus thumb and separate feet');
+  motion.slide();for(let i=0;i<30;i++){motion.update(1/120);rig.update(1/120,true,motion);}
+  const slideBox=new THREE.Box3().setFromObject(rig.root);check(slideBox.max.y<1.18,'Articulated slide silhouette clears existing overhead beam');
+  motion.reset();rig.resetPose();rig.update(.1,false,motion);
+  const seq=new StartSequence();seq.begin(-2.7,camera,new THREE.Vector3());seq.advance(1.5);
+  check(seq.turn>0&&seq.turn<1&&seq.launch===0,'No running before body turn completes');seq.advance(START_DURATION);
+  check(!seq.active&&seq.yaw===0&&seq.launch===1,'Sequence finishes facing the track');
+  const frame=document.querySelector('#game');for(let i=0;i<150;i++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+  const doc=frame.contentDocument;const ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));
+  const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);const game=await ready;
+  check(!!game,'Upgraded game initializes');game.renderer.setAnimationLoop(null);
+  const realRender=game.render.bind(game);game.render=()=>{};game.clock.getDelta=()=>1/60;
+  const beforePosition=game.player.root.position.clone(),beforeYaw=game.player.root.rotation.y;
+  doc.querySelector('#play').click();check(game.state==='starting'&&doc.querySelector('#hud').hidden,'Play begins cinematic with HUD hidden');
+  check(game.player.root.position.distanceTo(beforePosition)<.001&&game.player.root.rotation.y===beforeYaw,'Play preserves pose and position at first frame');
+  game.action('left');game.action('jump');check(game.motion.lane===0&&game.motion.velocityY===0,'Gameplay input is gated during transition');
+  for(let i=0;i<24;i++)game.update();const time=game.sequence.elapsed;game.action('pause');game.advance(1);
+  check(game.state==='paused'&&game.sequence.elapsed===time,'Pause freezes cinematic timeline');doc.querySelector('#resume').click();check(game.state==='starting','Resume returns to interrupted cinematic');
+  doc.querySelector('#play').click();check(game.sequence.elapsed===time,'Repeated Play cannot reset active sequence');
+  while(game.sequence.elapsed<1.7)game.update();check(game.player.runBlend<.01&&game.session.distance===0,'No running or score while turning');
+  for(let i=0;i<90&&game.state==='starting';i++)game.update();
+  check(game.state==='playing'&&Math.abs(game.player.root.rotation.y)<.001&&!doc.querySelector('#hud').hidden,'Cinematic enters normal gameplay after full turn');
+  game.action('right');game.action('jump');game.advance(.15);check(game.motion.x>0&&game.motion.y>0,'Lane and jump controls work after cinematic');
+  game.crash();game.advance(1.5);check(game.state==='gameover','Collision completes before Game Over');game.action('restart');check(game.state==='playing'&&game.session.distance===0,'Restart remains immediate and resets stats');
+  for(const [type,model] of Object.entries(game.track.rows[0].slots[0])){
+    const bounds=new THREE.Box3().setFromObject(model);const size=bounds.getSize(new THREE.Vector3());const hitbox=model.userData.hitbox;
+    check(size.x<=hitbox.width+.03&&size.z<=hitbox.depth+.03&&bounds.max.y<=hitbox.top+.03,'Detailed '+type+' stays inside existing collider envelope');
+  }
+  const geometry=game.track.boxGeometry;for(let i=0;i<40;i++){game.track.reset();game.track.spawn();}
+  check(game.track.rows.length===9&&game.track.boxGeometry===geometry,'Object models remain pooled across restarts');
+  const shaderErrors=[];game.renderer.debug.onShaderError=()=>shaderErrors.push('shader error');
+  for(const quality of ['eco','standard','high']){game.setQuality(quality);realRender();check(shaderErrors.length===0&&!game.renderer.info.programs.some(p=>p.diagnostics?.runnable===false),'Rendering compiles for '+quality);}
+  game.setQuality('standard');game.setState('menu');game.camera.position.copy(camera);game.camera.lookAt(-2.1,1.3,0);realRender();
+  const gl=game.renderer.getContext();const pixels=new Uint8Array(4*32*32);gl.readPixels(950,530,32,32,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+  check(pixels.some((x,i)=>i%4!==3&&x>10),'Bloom compositor outputs visible scene pixels');
+  const timings=[];for(let i=0;i<8;i++){const t=performance.now();realRender();gl.finish();timings.push(performance.now()-t);}
+  const mean=timings.reduce((a,b)=>a+b,0)/timings.length;timings.sort((a,b)=>a-b);
+  results.push('METRIC scene_draw_calls='+game.renderPipeline.lastSceneCalls+' triangles='+game.renderPipeline.lastSceneTriangles);
+  if(mean>.01)results.push('METRIC render_ms_mean='+mean.toFixed(2)+' max='+timings[timings.length-1].toFixed(2));
+  else results.push('METRIC render_timing=unavailable_under_virtual_clock');
+  const ext=gl.getExtension('WEBGL_debug_renderer_info');if(ext)results.push('METRIC renderer='+gl.getParameter(ext.UNMASKED_RENDERER_WEBGL));
+  game.render=realRender;document.querySelector('#result').textContent=results.join('\n')+'\nALL PASS';
+}catch(e){document.querySelector('#result').textContent=results.join('\n')+'\nFAIL '+e.stack;}
+</script></body></html>

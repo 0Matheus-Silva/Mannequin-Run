@@ -1,0 +1,28 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Visual development fixture</title><style>html,body{margin:0;background:#000}iframe{border:0;width:100vw;height:100vh;display:block}</style></head><body><iframe src="../index.html" id="frame"></iframe><script type="module">
+const frame=document.querySelector('#frame');
+for(let i=0;i<150;i++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+const params=new URLSearchParams(location.search);const sector=Math.max(0,Math.min(3,Number(params.get('sector')??0)));const view=params.get('view')??'playing';
+const doc=frame.contentDocument;
+const ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));
+const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);
+const game=await ready;game.renderer.setAnimationLoop(null);
+if(['playing','paused','gameover'].includes(view)){
+  game.startRun();game.renderer.setAnimationLoop(null);game.session.distance=sector*600+180;game.sector=sector;
+  game.world.segments.forEach((_,i)=>game.world.replace(i,sector));game.world.applyPalette(game.session.distance);
+  game.ui.sector(sector,false);
+  game.track.spawn();const row=game.track.rows[0];row.group.position.z=-18;game.track.spawn();game.track.rows[1].group.position.z=-45;
+  game.player.root.rotation.y=0;game.player.update(.3,true,game.motion);game.camera.position.set(0,3.8,7);game.camera.lookAt(0,1.4,-7);
+  if(view==='paused')game.setState('paused');
+  if(view==='gameover'){game.crash();game.advance(1.5);for(let i=0;i<90;i++)game.player.update(1/60,false,game.motion,true);}
+}else{game.player.root.rotation.y=Math.atan2(-game.camera.position.x,-game.camera.position.z);game.camera.lookAt(game.target);game.player.update(.1,false,game.motion,false,{cameraPosition:game.camera.position});}
+if(view==='starting'){
+  game.beginRun();const t=Number(params.get('time')??1);game.advance(t);
+  game.player.root.rotation.y=game.sequence.yaw;
+  game.camera.position.lerpVectors(game.sequence.fromCamera,new game.camera.position.constructor(0,3.8,7),game.sequence.cameraBlend);
+  game.target.lerpVectors(game.sequence.fromTarget,new game.target.constructor(0,1.4,-7),game.sequence.cameraBlend);game.camera.lookAt(game.target);
+  for(let i=0;i<10;i++)game.player.update(.016,false,game.motion,false,{transition:game.sequence,cameraPosition:game.camera.position});
+}
+if(view==='help')doc.querySelector('#help-open').click();
+if(view==='settings')doc.querySelector('#settings-open').click();
+game.ui.update(game.session);game.render();
+</script></body></html>

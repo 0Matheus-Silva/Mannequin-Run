@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Local render measurement</title></head><body><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+try{
+  const frame=document.querySelector('#frame');for(let n=0;n<300;n++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+  const doc=frame.contentDocument;const ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);
+  const game=await ready;game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);const gl=game.renderer.getContext();const metrics=[];
+  for(const quality of ['eco','standard','high']){
+    game.setQuality(quality);game.startRun();game.world.update(0,0,180);game.track.spawn();game.track.rows[0].group.position.z=-16;
+    game.camera.position.set(0,3.8,7);game.camera.lookAt(0,1.4,-7);
+    for(let i=0;i<5;i++){game.render();gl.finish();await new Promise(requestAnimationFrame);}
+    const samples=[];for(let i=0;i<8;i++){const t=performance.now();game.player.update(1/60,true,game.motion);game.render();gl.finish();await new Promise(requestAnimationFrame);samples.push(performance.now()-t);}
+    samples.sort((a,b)=>a-b);const mean=samples.reduce((a,b)=>a+b,0)/samples.length;
+    metrics.push(quality+' frame_ms_mean='+mean.toFixed(2)+' max_ms='+samples.at(-1).toFixed(2)+' observed_render_loop_fps='+(1000/mean).toFixed(1));
+  }
+  const extension=gl.getExtension('WEBGL_debug_renderer_info');if(extension)metrics.push('renderer='+gl.getParameter(extension.UNMASKED_RENDERER_WEBGL));
+  document.querySelector('#result').textContent=metrics.join('\n')+'\nALL PASS';window.benchmarkDone=true;
+}catch(e){document.querySelector('#result').textContent='FAIL '+e.stack;window.benchmarkDone=true;}
+</script></body></html>

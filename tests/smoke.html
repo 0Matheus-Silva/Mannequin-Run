@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Stage 1 smoke test</title>
+<script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script></head>
+<body><pre id="result">RUNNING</pre><iframe id="game" src="../index.html" width="960" height="540"></iframe>
+<script type="module">
+import * as THREE from 'three';
+import { Mannequin } from '../src/player/Mannequin.js';
+import { Laboratory } from '../src/environments/Laboratory.js';
+const results = [];
+const assert = (condition, name) => { if (!condition) throw new Error(name); results.push('PASS ' + name); };
+try {
+  const player = new Mannequin();
+  player.update(.1, true);
+  const angle = player.legs[0].pivot.rotation.x;
+  player.update(.1, true);
+  assert(angle !== player.legs[0].pivot.rotation.x, 'Running animation changes leg pose');
+  assert(player.root.children.length === 1, 'Visual adapter exposes a single root');
+  const world = new Laboratory(new THREE.Scene());
+  const count = world.root.children.length;
+  for (let i = 0; i < 7200; i++) world.update(1 / 60, 12);
+  assert(world.root.children.length === count, 'Two minutes recycle fixed scene objects');
+  assert(world.segments.every(segment => segment.position.z <= 32 && segment.position.z >= -128), 'Segments remain in recycling bounds');
+  const positions = world.segments.map(s => s.position.z).sort((a,b) => a-b);
+  assert(positions.slice(1).every((z,i) => Math.abs(z - positions[i] - 16) < .001), 'Segment spacing remains seamless');
+  const frame = document.querySelector('#game');
+  for (let i = 0; i < 100; i++) {
+    if (frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE')) break;
+    if (frame.contentDocument?.querySelector('#error')?.hidden === false) throw new Error(frame.contentDocument.querySelector('#error-message').textContent);
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  const doc = frame.contentDocument;
+  assert(doc.querySelector('#status').textContent.includes('SISTEMAS ONLINE'), 'Game initializes successfully');
+  const gl = doc.querySelector('canvas').getContext('webgl2');
+  assert(gl && gl.getParameter(gl.MAX_TEXTURE_SIZE) > 0, 'WebGL2 context is active');
+  const ready=new Promise(resolve=>doc.addEventListener('test-ready',event=>resolve(event.detail),{once:true}));
+  const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);
+  const game=await ready;game.renderer.setAnimationLoop(null);
+  doc.querySelector('#play').click();
+  game.advance(2.65);
+  assert(doc.querySelector('#menu').hidden && !doc.querySelector('#hud').hidden, 'Play button starts gameplay');
+  frame.contentWindow.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape' }));
+  assert(!doc.querySelector('#pause-panel').hidden, 'Escape pauses gameplay');
+  doc.querySelector('#pause-panel [data-menu]').click();
+  assert(!doc.querySelector('#menu').hidden && doc.querySelector('#hud').hidden, 'Main Menu returns to start');
+  doc.querySelector('#help-open').click();
+  assert(doc.querySelector('#help').open, 'About dialog opens');
+  doc.querySelector('#help-close').click();
+  assert(!doc.querySelector('#help').open, 'About dialog closes');
+  document.querySelector('#result').textContent = results.join('\n') + '\nALL PASS';
+} catch (error) { document.querySelector('#result').textContent = results.join('\n') + '\nFAIL ' + error.stack; }
+</script></body></html>
