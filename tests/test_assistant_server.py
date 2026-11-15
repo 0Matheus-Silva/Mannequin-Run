@@ -71,8 +71,27 @@ class BrokerTests(unittest.TestCase):
         def forbidden(*_, **__):
             self.fail("Local limit must not contact provider")
         broker = server_module.Broker(self.env(), forbidden)
-        broker.count = 10
+        broker.count = broker.daily_limit
         self.assertEqual(broker.issue()[1]["code"], "local_daily_limit")
+
+    def test_configurable_limit_allows_more_than_ten_without_bypassing_google(self):
+        calls = []
+        def fake(request, timeout):
+            calls.append(request)
+            return io.BytesIO(b'{"name":"auth_tokens/mock-only"}')
+        env = {**self.env(), "GEMINI_LOCAL_DAILY_LIMIT": "12"}
+        broker = server_module.Broker(env, fake)
+        for _ in range(12):
+            self.assertEqual(broker.issue()[0], 200)
+        status, body = broker.issue()
+        self.assertEqual(status, 429)
+        self.assertEqual(body["code"], "local_daily_limit")
+        self.assertIn("12", body["error"])
+        self.assertEqual(len(calls), 12)
+
+    def test_invalid_daily_limit_keeps_finite_default(self):
+        for value in ["invalid", "0", "-1", "1001", ""]:
+            self.assertEqual(server_module.Broker({**self.env(), "GEMINI_LOCAL_DAILY_LIMIT": value}).daily_limit, 30)
 
     def test_google_quota_is_identified_without_exposing_provider_details(self):
         def fake(request, timeout):

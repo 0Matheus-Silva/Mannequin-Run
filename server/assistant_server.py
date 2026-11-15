@@ -69,6 +69,12 @@ class Broker:
         self.opener = opener
         self.csrf = secrets.token_urlsafe(32)
         self.count = 0
+        try:
+            self.daily_limit = int(env.get("GEMINI_LOCAL_DAILY_LIMIT", "30"))
+        except (TypeError, ValueError):
+            self.daily_limit = 30
+        if not 1 <= self.daily_limit <= 1000:
+            self.daily_limit = 30
         self.day = dt.date.today()
         self.lock = threading.Lock()
 
@@ -79,8 +85,8 @@ class Broker:
         with self.lock:
             if self.day != dt.date.today():
                 self.day, self.count = dt.date.today(), 0
-            if self.count >= 10:
-                return 429, {"code": "local_daily_limit", "error": "Limite local de dez emissões por dia atingido. Tente novamente amanhã. Nenhum serviço pago foi ativado."}
+            if self.count >= self.daily_limit:
+                return 429, {"code": "local_daily_limit", "error": f"Limite local de {self.daily_limit} tentativas por dia atingido. Isso não indica falta de cota no Google. Confira GEMINI_LOCAL_DAILY_LIMIT no backend local."}
             self.count += 1
         request = urllib.request.Request(TOKEN_ENDPOINT, data=json.dumps(token_payload()).encode(), method="POST",
                                          headers={"Content-Type": "application/json", "x-goog-api-key": self.env["GEMINI_API_KEY"]})
