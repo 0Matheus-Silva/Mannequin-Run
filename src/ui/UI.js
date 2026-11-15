@@ -149,7 +149,7 @@ export class UI {
     const toast=document.querySelector('#sector-toast');
     toast.classList.remove('show');
     if(!announce)return;
-    document.querySelector('#sector-number').textContent='MANNEQUIN RUN // SETOR '+String(index+1).padStart(2,'0');
+    document.querySelector('#sector-number').textContent='NEXUS RUN // SETOR '+String(index+1).padStart(2,'0');
     document.querySelector('#sector-name').textContent=sector.name;
     document.querySelector('#sector-subtitle').textContent=sector.subtitle;
     void toast.offsetWidth;

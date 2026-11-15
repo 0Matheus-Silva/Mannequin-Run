@@ -1,4 +1,4 @@
-name: Publicar MANNEQUIN RUN
+name: Publicar Nexus Run
 
 on:
   push:

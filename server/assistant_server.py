@@ -180,7 +180,7 @@ def main():
     parser.add_argument("--port", type=int, default=8081)
     args = parser.parse_args()
     server = http.server.ThreadingHTTPServer(("127.0.0.1", args.port), handler_for(Broker(environment())))
-    print(f"MANNEQUIN RUN + assistente: http://localhost:{args.port} — Gemini desativada por padrão.", flush=True)
+    print(f"NEXUS RUN + assistente: http://localhost:{args.port} — Gemini desativada por padrão.", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

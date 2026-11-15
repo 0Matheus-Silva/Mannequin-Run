@@ -2,7 +2,7 @@
 
 ## Site publicado
 
-O workflow `.github/workflows/pages.yml` publica automaticamente pushes em `main`, copiando apenas `index.html`, `assets`, `src` e `styles`. Em Settings → Pages, a fonte precisa ser GitHub Actions. Acompanhe a execução “Publicar MANNEQUIN RUN” na aba Actions.
+O workflow `.github/workflows/pages.yml` publica automaticamente pushes em `main`, copiando apenas `index.html`, `assets`, `src` e `styles`. Em Settings → Pages, a fonte precisa ser GitHub Actions. Acompanhe a execução “Publicar Nexus Run” na aba Actions.
 
 Endereço: https://0matheus-silva.github.io/Mannequin-Run/
 

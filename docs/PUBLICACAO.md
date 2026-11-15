@@ -1,4 +1,4 @@
-# Publicação do MANNEQUIN RUN
+# Publicação do Nexus
 
 Repositório: https://github.com/0Matheus-Silva/Mannequin-Run
 
@@ -19,7 +19,7 @@ Atualização posterior: a fala foi reduzida para **“Ai, minha língua!”**, 
 
 O arquivo `.github/workflows/pages.yml` publica a branch `main` usando GitHub Actions. Ele prepara somente `index.html`, `assets/`, `src/` e `styles/` para o site; não publica o servidor Python, `.env`, ferramentas, testes ou pacotes de referência no artefato do Pages. O código-fonte e a documentação ficam disponíveis no repositório.
 
-Em **Settings → Pages**, a fonte deve ser **GitHub Actions**. Depois disso, cada push em `main` atualiza o site automaticamente. O workflow também aceita execução manual em **Actions → Publicar MANNEQUIN RUN → Run workflow**. A configuração por branch/pasta `docs` não é usada.
+Em **Settings → Pages**, a fonte deve ser **GitHub Actions**. Depois disso, cada push em `main` atualiza o site automaticamente. O workflow também aceita execução manual em **Actions → Publicar Nexus Run → Run workflow**. A configuração por branch/pasta `docs` não é usada.
 
 ## Assistente e segurança
 

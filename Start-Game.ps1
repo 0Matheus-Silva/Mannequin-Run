@@ -5,7 +5,7 @@ $listener = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, $Port)
 $mime = @{ '.html'='text/html; charset=utf-8'; '.js'='text/javascript; charset=utf-8'; '.css'='text/css; charset=utf-8'; '.json'='application/json'; '.png'='image/png'; '.svg'='image/svg+xml'; '.wav'='audio/wav' }
 try {
     $listener.Start()
-    Write-Host "MANNEQUIN RUN: http://localhost:$Port (Ctrl+C para encerrar)"
+    Write-Host "NEXUS RUN: http://localhost:$Port (Ctrl+C para encerrar)"
     while ($true) {
         $client = $listener.AcceptTcpClient()
         $client.ReceiveTimeout = 3000

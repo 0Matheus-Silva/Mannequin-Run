@@ -27,7 +27,7 @@ export class AssistantSession{
     try{const answer=await this.provider.reply(clean);if(epoch!==this.epoch)return;if(answer){this.message('assistant',answer);this.status('ready');this.voice.speakLocal(answer);}}catch(error){this.fail(error.message);}
   }
   async present(){if(!this.active)await this.start(this.ui.kind(),this.ui.consent());if(!this.active)return;this.interrupt();this.ui.presentation();
-    if(this.kind==='live'){await this.send('Apresente o projeto completo Manequim Run: mencione uma única vez, no começo ou no final, que foi desenvolvido em conjunto por Matheus, Pedro e Victor. Não separe quem fez cada etapa. Explique em ordem manequim físico, hardware, VM, jogo e chatbot, distinguindo recursos físicos dos virtuais. Cubra as cinco etapas com clareza e concisão e termine convidando perguntas.');return;}
+    if(this.kind==='live'){await this.send('Apresente o projeto completo Nexus: mencione uma única vez, no começo ou no final, que foi desenvolvido em conjunto por Matheus, Pedro e Victor. Não separe quem fez cada etapa. Explique em ordem manequim físico, hardware, VM, jogo e chatbot, distinguindo recursos físicos dos virtuais. Cubra as cinco etapas com clareza e concisão e termine convidando perguntas.');return;}
     this.message('assistant',this.knowledge.presentation);try{await this.voice.presentation();}catch{this.status('ready','Áudio local indisponível. A apresentação está transcrita acima.');}
   }
   async toggleMic(){

@@ -19,7 +19,7 @@ Padronizados os nomes exibidos no HUD e nas apresentações:
 - **SETOR 03 — COMPLEXO INDUSTRIAL**;
 - **SETOR 04 — ZONA CONTAMINADA**.
 
-Traduzidos também INICIAR, COMO JOGAR, CONTINUAR, REINICIAR, MENU PRINCIPAL, FIM DE JOGO, DIVISÃO DE PESQUISA, rótulos dos monitores e estados de áudio LIGADO/DESLIGADO. As instruções explicam as novas trilhas e deixam claro que coletar é opcional. Durante o final, o cabeçalho identifica o destino UniFECAF e depois a cerimônia EXPOTECH 2026, sem permanecer com o nome de um setor anterior. MANNEQUIN RUN, UniFECAF e EXPOTECH 2026 foram preservados.
+Traduzidos também INICIAR, COMO JOGAR, CONTINUAR, REINICIAR, MENU PRINCIPAL, FIM DE JOGO, DIVISÃO DE PESQUISA, rótulos dos monitores e estados de áudio LIGADO/DESLIGADO. As instruções explicam as novas trilhas e deixam claro que coletar é opcional. Durante o final, o cabeçalho identifica o destino UniFECAF e depois a cerimônia EXPOTECH 2026, sem permanecer com o nome de um setor anterior. Nexus, UniFECAF e EXPOTECH 2026 foram preservados.
 
 ## Chegada e fachada
 

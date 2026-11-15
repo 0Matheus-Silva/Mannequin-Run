@@ -6,7 +6,7 @@ export class DemoProvider{
     const q=normalize(text);let topic;
     if(/(qr\s*code|qrcode|celular|mobile|smartphone|ranking online)/.test(q))topic='scope';
     else if(/(fonte de alimentacao|qual fonte|quantos watts|quanto custa|preco|qual hipervisor|virtualbox|vmware|endereco atual|link atual)/.test(q))topic='unknown';
-    else if(/(projeto (completo|inteiro)|todas as etapas|todo o projeto|processo completo|apresentacao completa|apresente o projeto|apresente o manequim run|apresente o mannequin run)/.test(q))topic='presentation';
+    else if(/(projeto (completo|inteiro)|todas as etapas|todo o projeto|processo completo|apresentacao completa|apresente o projeto|apresente o manequim run|apresente o mannequin run|apresente (o )?nexus(?! run))/.test(q))topic='presentation';
     else if(/(primeira etapa|etapa 1|caracteriz|transformacao|manequim fisico)/.test(q))topic='physical';
     else if(/(segunda etapa|etapa 2)/.test(q))topic='hardware';
     else if(/(terceira etapa|etapa 3)/.test(q))topic='vm';
@@ -35,7 +35,7 @@ export class DemoProvider{
     else if(/(tecnolog|program|three|javascript|html|css|feito|desenvolv)/.test(q))topic='technology';
     else if(/(mascara|roupa|capuz|personagem|manequim)/.test(q))topic='character';
     else if(/(semestral|cdc|projeto)/.test(q))topic='project';
-    else if(/(jogo|jogabilidade|endless|subway)/.test(q))topic='game';
+    else if(/(jogo|jogabilidade|endless|subway|nexus run)/.test(q))topic='game';
     else if(/(expotec|unifecaf|evento)/.test(q))topic='event';
     else if(/(voce e|quem e|mora|pensa|conscien)/.test(q))return this.knowledge.identity+' Nesta modalidade, minhas respostas são uma demonstração local roteirizada.';
     else if(/apresent/.test(q))topic='presentation';

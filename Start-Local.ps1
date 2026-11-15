@@ -23,6 +23,6 @@ if(-not $assistantAvailable){
   Start-Process -FilePath powershell.exe -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $PSScriptRoot 'Start-Assistant.ps1'),'-Port',$AssistantPort) -WorkingDirectory $PSScriptRoot -WindowStyle Hidden | Out-Null
 }
 $env:LOCAL_PORT=[string]$Port;$env:ASSISTANT_PORT=[string]$AssistantPort
-Write-Host "MANNEQUIN RUN local: http://127.0.0.1:$Port"
+Write-Host "NEXUS RUN local: http://127.0.0.1:$Port"
 if(-not $NoBrowser){Start-Process "http://127.0.0.1:$Port"}
 & $nodeExecutable server/local-server.js

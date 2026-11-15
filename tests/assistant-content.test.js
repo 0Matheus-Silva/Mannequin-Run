@@ -4,6 +4,18 @@ import {readFile} from 'node:fs/promises';
 import {DemoProvider} from '../src/assistant/DemoProvider.js';
 const knowledge=JSON.parse(await readFile(new URL('../assets/assistant/knowledge.json',import.meta.url),'utf8'));
 const personality=JSON.parse(await readFile(new URL('../assets/assistant/personality.json',import.meta.url),'utf8'));
+test('Nexus identifies the project and assistant, while Nexus Run identifies the game',async()=>{
+ const demo=new DemoProvider(knowledge,personality);
+ assert.equal(await demo.reply('Apresente o Nexus'),knowledge.presentation);
+ assert.ok((await demo.reply('Apresente o Nexus Run')).startsWith(knowledge.game));
+ assert.match(knowledge.identity,/chatbot oficial.*projeto Nexus/);
+ assert.match(knowledge.game,/jogo Nexus Run/);
+ assert.match(knowledge.masterScript,/O Nexus Run é um jogo/);
+ assert.doesNotMatch(JSON.stringify([knowledge,personality]),/mannequin run|manequim run/i);
+ const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(html,/<title>NEXUS RUN<\/title>/);
+ assert.match(html,/<h2>NEXUS<\/h2>/);
+});
 test('full presentation introduces team, covers five ordered stages and closes with an invitation',async()=>{
  const demo=new DemoProvider(knowledge,personality),answer=await demo.reply('Apresente o projeto completo');
  assert.equal(answer,knowledge.presentation);assert.match(answer.split('\n')[0],/Matheus, Pedro e Victor/);

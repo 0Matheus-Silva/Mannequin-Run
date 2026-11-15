@@ -42,7 +42,7 @@ const server=http.createServer(async(req,res)=>{
       if(profile&&req.method==='DELETE')return reply(res,200,await store.deletePlayer(profile[1]));
       if(path==='/api/runs'&&req.method==='POST')return reply(res,200,await store.saveRun(await body(req)));
       if(path==='/api/ranking'&&req.method==='GET')return reply(res,200,await store.ranking(url.searchParams.get('mode')||'all'));
-      if(path==='/api/results/export'&&req.method==='POST')return reply(res,200,await snapshot(pool),{'Content-Disposition':'attachment; filename="mannequin-results.json"'});
+      if(path==='/api/results/export'&&req.method==='POST')return reply(res,200,await snapshot(pool),{'Content-Disposition':'attachment; filename="nexus-resultados.json"'});
       return reply(res,404,{error:'Rota inexistente.'});
     }
     if(!['GET','HEAD'].includes(req.method))return reply(res,405,{error:'Método inválido.'});
@@ -52,5 +52,5 @@ const server=http.createServer(async(req,res)=>{
     const data=await readFile(target);res.writeHead(200,{'Content-Type':mime[extname(target)],'Content-Length':data.length,'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});res.end(req.method==='HEAD'?undefined:data);
   }catch(error){reply(res,error instanceof Invalid?error.status:error.code==='ENOENT'?404:503,{error:error instanceof Invalid?error.message:'Serviço local indisponível. Dados pendentes serão preservados no navegador.'});}
 });
-server.listen(port,'127.0.0.1',()=>console.log(`MANNEQUIN RUN: http://127.0.0.1:${port} — jogadores MySQL + Gemini preservado`));
+server.listen(port,'127.0.0.1',()=>console.log(`NEXUS RUN: http://127.0.0.1:${port} — jogadores MySQL + Gemini preservado`));
 async function close(){server.close();await pool?.end();}process.on('SIGTERM',close);process.on('SIGINT',close);

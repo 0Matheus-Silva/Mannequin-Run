@@ -1,4 +1,4 @@
-# Assistente do MANNEQUIN RUN
+# Assistente do Nexus
 
 Entrega local de 14/11/2026. O jogo recebeu um painel lateral independente, demonstração roteirizada e apresentação falada offline. A infraestrutura para Gemini Live está implementada, mas a conversa real permanece desativada: faltam chave, revisão operacional do público e confirmação da disponibilidade gratuita no projeto do provedor. Nenhuma conversa ou gravação foi enviada ao Google durante o desenvolvimento.
 

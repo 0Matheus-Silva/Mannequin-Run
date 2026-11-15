@@ -24,7 +24,7 @@ O roteiro exige confirmação antes de anunciar PS5, banco e ranking online. A i
 
 ## Como experimentar
 
-Na página local existente, encerre uma conversa anterior e pressione **Ctrl+F5**. Abra CONVERSAR e use CONHEÇA O MANNEQUIN RUN para a apresentação completa. Na demonstração, o roteiro também pode ser pedido por texto; no Gemini, inicie uma nova sessão para receber as novas instruções.
+Na página local existente, encerre uma conversa anterior e pressione **Ctrl+F5**. Abra CONVERSAR e use CONHEÇA O Nexus para a apresentação completa. Na demonstração, o roteiro também pode ser pedido por texto; no Gemini, inicie uma nova sessão para receber as novas instruções.
 
 Perguntas sugeridas: “Apresente o projeto completo”, “Apresente apenas o jogo”, “Quem fez a caracterização?”, “Qual processador e quanta RAM?”, “Quanta memória foi alocada à VM?”, “Para que serve o IIS?”, “Como funciona o ngrok?” e “Quem desenvolveu o chatbot?”.
 

@@ -1,4 +1,4 @@
-# MANNEQUIN RUN — pacote visual e narrativo
+# Nexus — pacote visual e narrativo
 
 Entrega local de desenvolvimento em 14/11/2026, em `D:\Matheus\Manequin-Run`.
 

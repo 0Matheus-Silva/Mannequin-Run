@@ -22,7 +22,7 @@ export function getSurfaces(){
   const screen=canvasTexture((ctx,s)=>{
     ctx.fillStyle='#071b20';ctx.fillRect(0,0,s,s);ctx.strokeStyle='#276e76';ctx.lineWidth=1;
     for(let y=24;y<s;y+=20){ctx.beginPath();ctx.moveTo(12,y);ctx.lineTo(s-12,y);ctx.stroke();}
-    ctx.fillStyle='#6cfff3';ctx.font='12px monospace';ctx.fillText('MNQ // PESQUISA',13,20);ctx.fillText('UNIDADE: 001',13,225);
+    ctx.fillStyle='#6cfff3';ctx.font='12px monospace';ctx.fillText('NXS // PESQUISA',13,20);ctx.fillText('UNIDADE: 001',13,225);
     ctx.strokeStyle='#62e1de';ctx.beginPath();for(let x=10;x<245;x+=5){const y=95+Math.sin(x*.09)*20+random()*12;x===10?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();
     for(let n=0;n<5;n++){ctx.fillStyle=n===3?'#ffad62':'#317f85';ctx.fillRect(14,140+n*12,60+random()*140,4);}
     ctx.strokeStyle='rgba(136,178,175,.5)';ctx.lineWidth=.8;for(let n=0;n<7;n++){const angle=n*.9;ctx.beginPath();ctx.moveTo(180,64);ctx.lineTo(180+Math.cos(angle)*32,64+Math.sin(angle)*32);ctx.lineTo(180+Math.cos(angle+.2)*90,64+Math.sin(angle+.2)*90);ctx.stroke();}

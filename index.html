@@ -4,21 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#060c12">
-  <title>MANNEQUIN RUN</title>
+  <title>NEXUS RUN</title>
   <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="./styles/assistant.css">
   <link rel="stylesheet" href="./styles/players.css">
   <script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js"}}</script>
 </head>
 <body>
-  <main id="viewport" aria-label="Mannequin Run — jogo 3D">
+  <main id="viewport" aria-label="Nexus Run — jogo 3D">
     <div id="stage">
       <canvas id="scene" aria-label="Laboratório abandonado e manequim tecnológico"></canvas>
       <div class="vignette" aria-hidden="true"></div>
-      <header class="topline"><span><i></i> MNQ / DIVISÃO DE PESQUISA</span><span id="sector-label">SETOR 01 — LABORATÓRIO ABANDONADO</span></header>
+      <header class="topline"><span><i></i> NXS / DIVISÃO DE PESQUISA</span><span id="sector-label">SETOR 01 — LABORATÓRIO ABANDONADO</span></header>
       <section id="menu" class="menu">
-        <p class="eyebrow">PROJETO MANNEQUIN / PROTOCOLO DE FUGA</p>
-        <h1>MANNEQUIN<br><span>RUN</span><em>01 /</em></h1>
+        <p class="eyebrow">PROJETO NEXUS / PROTOCOLO DE FUGA</p>
+        <h1>NEXUS<br><span>RUN</span><em>01 /</em></h1>
         <p class="intro">O laboratório caiu.<br>Você acabou de despertar.</p>
         <div class="mode-select" role="group" aria-label="Modo de jogo"><button data-mode="story" aria-pressed="false">MODO HISTÓRIA</button><button data-mode="infinite" aria-pressed="true">MODO INFINITO</button></div>
         <p id="mode-description">Corrida sem fim. Quatro ambientes. Um novo recorde.</p>
@@ -28,7 +28,7 @@
         <div class="menu-tools profile-tools"><button id="profiles-open" class="secondary">JOGADORES / RANKING</button><button id="gamepad-open" class="secondary">TESTAR CONTROLE</button></div>
         <p id="profile-name">Nenhum jogador selecionado</p><p id="profile-status" role="status"></p>
       </section>
-      <aside class="specimen" id="specimen"><span>UNIDADE 001</span><strong>MANNEQUIN</strong><small>ESTRUTURA SINTÉTICA / NÚCLEO ATIVO</small><div class="specimen-line"></div></aside>
+      <aside class="specimen" id="specimen"><span>UNIDADE 001</span><strong>NEXUS</strong><small>ESTRUTURA SINTÉTICA / NÚCLEO ATIVO</small><div class="specimen-line"></div></aside>
       <section id="hud" hidden aria-label="Dados da partida">
         <div class="hud-values"><div><small>PONTUAÇÃO</small><strong id="score">0</strong></div><div><small>DISTÂNCIA</small><strong id="distance">0 m</strong></div><div><small>COMPONENTES</small><strong id="items">0</strong></div><div><small>RECORDE</small><strong id="best">0</strong></div><div><small>VELOCIDADE</small><strong id="speed">43 km/h</strong></div></div>
         <div class="sector-track"><div id="sector-progress"></div></div>
@@ -45,17 +45,17 @@
       <p id="gamepad-status" role="status">Teclado disponível · conecte um controle e pressione um botão.</p>
       <p id="ending-caption" hidden></p>
       <div id="award-win" hidden>WIN! <span>1º LUGAR — EXPOTECH 2026</span></div>
-      <section id="victory-panel" class="victory-panel" hidden aria-labelledby="victory-title"><p class="eyebrow">A JORNADA ENCONTROU SEU DESTINO</p><h2 id="victory-title">MANNEQUIN RUN</h2><p>UniFECAF · EXPOTECH 2026</p><strong>PRIMEIRO LUGAR</strong><button id="credits-replay" class="secondary">VER CRÉDITOS</button><button data-menu class="primary">VOLTAR AO INÍCIO <span>↗</span></button></section>
-      <section id="credits-roll" hidden aria-label="Créditos da equipe"><div id="credits-content"><h2>CDC2NA</h2><p>Fabiano Matheus de Camargo Silva</p><p>Pedro Henrique Freitas de Oliveira</p><p>Vitor Barioni Ferraz</p><small>MANNEQUIN RUN · EXPOTECH 2026</small></div></section>
+      <section id="victory-panel" class="victory-panel" hidden aria-labelledby="victory-title"><p class="eyebrow">A JORNADA ENCONTROU SEU DESTINO</p><h2 id="victory-title">NEXUS RUN</h2><p>UniFECAF · EXPOTECH 2026</p><strong>PRIMEIRO LUGAR</strong><button id="credits-replay" class="secondary">VER CRÉDITOS</button><button data-menu class="primary">VOLTAR AO INÍCIO <span>↗</span></button></section>
+      <section id="credits-roll" hidden aria-label="Créditos da equipe"><div id="credits-content"><h2>CDC2NA</h2><p>Fabiano Matheus de Camargo Silva</p><p>Pedro Henrique Freitas de Oliveira</p><p>Vitor Barioni Ferraz</p><small>NEXUS RUN · EXPOTECH 2026</small></div></section>
       <div id="sector-toast" aria-live="polite"><p id="sector-number"></p><h2 id="sector-name"></h2><small id="sector-subtitle"></small></div>
       <div id="hit-flash" aria-hidden="true"></div>
-      <button id="assistant-open" aria-expanded="false" aria-controls="assistant-panel">◈ CONVERSAR COM MANNEQUIN</button>
-      <aside id="assistant-panel" hidden aria-label="Converse com o personagem MANNEQUIN RUN" data-state="idle">
-        <header class="assistant-heading"><svg class="assistant-avatar" viewBox="0 0 100 110" preserveAspectRatio="xMidYMid meet" aria-label="Personagem de frente, com capuz preto e máscara ciano de três filtros" role="img"><defs><linearGradient id="avatar-hood" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#26333c"/><stop offset="1" stop-color="#0b1118"/></linearGradient><radialGradient id="avatar-mask"><stop stop-color="#142430"/><stop offset="1" stop-color="#03090f"/></radialGradient></defs><path d="M7 107L10 48Q11 5 50 4Q89 5 90 48L93 107L74 101L69 87H31L26 101Z" fill="url(#avatar-hood)"/><path d="M22 83L20 47Q21 16 50 13Q79 16 80 47L78 83" fill="none" stroke="#3c4a54" stroke-width="2"/><ellipse cx="50" cy="54" rx="29" ry="37" fill="url(#avatar-mask)"/><g fill="#06121c" stroke="#5ae6ef" stroke-width="1.6" stroke-linejoin="round"><path d="M47 39L37 32L25 32L27 45L35 55L44 52Z"/><path d="M53 39L63 32L75 32L73 45L65 55L56 52Z"/><ellipse cx="24" cy="73" rx="10" ry="13"/><ellipse cx="76" cy="73" rx="10" ry="13"/><circle cx="50" cy="72" r="10"/></g><g stroke="#38505b" stroke-width="1.3"><path d="M18 69H30M18 73H30M18 77H30M70 69H82M70 73H82M70 77H82"/><path d="M45 69H55M45 72H55M45 75H55"/></g><path d="M30 94L24 106M70 94L76 106" stroke="#67727a" stroke-width="1.5"/></svg><div><small>UNIDADE CONVERSACIONAL</small><h2>MANNEQUIN RUN</h2><p>Capuz, circuitos e algumas boas perguntas.</p></div><button id="assistant-minimize" aria-label="Minimizar conversa">−</button></header>
+      <button id="assistant-open" aria-expanded="false" aria-controls="assistant-panel">◈ CONVERSAR COM NEXUS</button>
+      <aside id="assistant-panel" hidden aria-label="Converse com o Nexus" data-state="idle">
+        <header class="assistant-heading"><svg class="assistant-avatar" viewBox="0 0 100 110" preserveAspectRatio="xMidYMid meet" aria-label="Personagem de frente, com capuz preto e máscara ciano de três filtros" role="img"><defs><linearGradient id="avatar-hood" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#26333c"/><stop offset="1" stop-color="#0b1118"/></linearGradient><radialGradient id="avatar-mask"><stop stop-color="#142430"/><stop offset="1" stop-color="#03090f"/></radialGradient></defs><path d="M7 107L10 48Q11 5 50 4Q89 5 90 48L93 107L74 101L69 87H31L26 101Z" fill="url(#avatar-hood)"/><path d="M22 83L20 47Q21 16 50 13Q79 16 80 47L78 83" fill="none" stroke="#3c4a54" stroke-width="2"/><ellipse cx="50" cy="54" rx="29" ry="37" fill="url(#avatar-mask)"/><g fill="#06121c" stroke="#5ae6ef" stroke-width="1.6" stroke-linejoin="round"><path d="M47 39L37 32L25 32L27 45L35 55L44 52Z"/><path d="M53 39L63 32L75 32L73 45L65 55L56 52Z"/><ellipse cx="24" cy="73" rx="10" ry="13"/><ellipse cx="76" cy="73" rx="10" ry="13"/><circle cx="50" cy="72" r="10"/></g><g stroke="#38505b" stroke-width="1.3"><path d="M18 69H30M18 73H30M18 77H30M70 69H82M70 73H82M70 77H82"/><path d="M45 69H55M45 72H55M45 75H55"/></g><path d="M30 94L24 106M70 94L76 106" stroke="#67727a" stroke-width="1.5"/></svg><div><small>UNIDADE CONVERSACIONAL</small><h2>NEXUS</h2><p>Capuz, circuitos e algumas boas perguntas.</p></div><button id="assistant-minimize" aria-label="Minimizar conversa">−</button></header>
         <p id="assistant-disclosure"></p>
         <div class="assistant-provider-row"><label for="assistant-provider">Conexão</label><select id="assistant-provider"><option value="demo">Demonstração local</option><option value="live">Gemini Live (requer configuração)</option></select></div>
         <div id="assistant-external" hidden><p>Áudio e texto enviados ao Google. No serviço gratuito, dados podem ser usados para aprimorar produtos e revistos por pessoas. Não informe dados pessoais. Público e cota devem ser revisados pela equipe; este aceite não verifica idade.</p><label><input id="assistant-consent" type="checkbox"> Entendi o processamento externo desta sessão.</label></div>
-        <div class="assistant-actions"><button id="assistant-start">INICIAR / RECONECTAR</button><button id="assistant-present">CONHEÇA O MANNEQUIN RUN</button></div>
+        <div class="assistant-actions"><button id="assistant-start">INICIAR / RECONECTAR</button><button id="assistant-present">CONHEÇA O NEXUS</button></div>
         <div class="assistant-state-row"><i aria-hidden="true"></i><span id="assistant-state" role="status"></span></div><p id="assistant-note" role="status"></p>
         <div id="assistant-history" role="log" aria-label="Histórico desta sessão" aria-live="polite"></div>
         <form id="assistant-form"><label class="assistant-input-label" for="assistant-input">Sua pergunta</label><div><input id="assistant-input" maxlength="1000" autocomplete="off" placeholder="Pergunte sobre o projeto…" disabled><button id="assistant-send" type="submit" disabled>ENVIAR</button></div></form>
