@@ -4,12 +4,10 @@ import datetime as dt
 import http.server
 import json
 import mimetypes
-import math
 import os
 from pathlib import Path
 import secrets
 import threading
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -70,7 +68,6 @@ class Broker:
         self.env = env
         self.opener = opener
         self.csrf = secrets.token_urlsafe(32)
-        self.last = 0
         self.count = 0
         self.day = dt.date.today()
         self.lock = threading.Lock()
@@ -84,11 +81,7 @@ class Broker:
                 self.day, self.count = dt.date.today(), 0
             if self.count >= 10:
                 return 429, {"code": "local_daily_limit", "error": "Limite local de dez emissões por dia atingido. Tente novamente amanhã. Nenhum serviço pago foi ativado."}
-            remaining = math.ceil(180 - (time.monotonic() - self.last))
-            if remaining > 0:
-                return 429, {"code": "local_cooldown", "retryAfterSeconds": remaining,
-                             "error": f"Aguarde {remaining} segundos antes de reconectar: intervalo local de proteção. Isso não indica falta de cota no Google."}
-            self.last, self.count = time.monotonic(), self.count + 1
+            self.count += 1
         request = urllib.request.Request(TOKEN_ENDPOINT, data=json.dumps(token_payload()).encode(), method="POST",
                                          headers={"Content-Type": "application/json", "x-goog-api-key": self.env["GEMINI_API_KEY"]})
         try:

@@ -22,7 +22,10 @@ test('full presentation introduces team, covers five ordered stages and closes w
  const stages=['primeira etapa','segunda etapa','terceira etapa','quarta etapa','quinta etapa'];
  let previous=-1;for(const stage of stages){const at=answer.indexOf(stage);assert.ok(at>previous);previous=at;}
  for(const fact of ['i7-9700F','3.00 GHz','32 GB','2133 MHz','RTX 3050','8 GB','238 GB','B360M AORUS Gaming 3','Windows Server 2022','IIS','ngrok','4 GB','40 GB','dois processadores virtuais','HTML5','CSS3','JavaScript','Three.js','EXPOTECH 2026'])assert.ok(answer.includes(fact),fact);
- assert.match(answer,/Obrigado pela visita/);assert.match(answer,/gostaria de conhecer/);
+ assert.match(answer,/Obrigado pela visita/);assert.match(answer,/pode perguntar/);
+ assert.match(answer.split('\n\n').at(-1),/jogar Nexus Run.*me controlar em um universo virtual.*Vamos jogar\?$/);
+ assert.match(personality.instruction,/Nexus Run.*universo virtual/);
+ assert.match(knowledge.masterScript,/encerre a apresentação completa convidando o visitante a jogar Nexus Run/);
 });
 test('specific questions route to every project stage without replaying the presentation',async()=>{
  const queries=[['Como foi a caracterização física?','physical'],['Quem fez o projeto?','team'],['Qual o processador?','cpu'],['Quanta RAM tem o computador?','ram'],['Qual a placa de vídeo?','gpu'],['Qual SSD?','storage'],['Qual a placa-mãe?','motherboard'],['Como funciona a máquina virtual?','vm'],['Quanta RAM foi alocada à VM?','vmResources'],['O que é IIS?','iis'],['Como funciona o ngrok?','ngrok'],['Qual Windows Server?','windowsServer'],['Explique o jogo','game'],['Quais os setores?','sectors'],['Como funciona o modo infinito?','infinite'],['Como foi desenvolvido o chatbot?','chatbot'],['Quais tecnologias do jogo?','technology'],['Existe salvamento MySQL?','persistence']];

@@ -54,7 +54,8 @@ class BrokerTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertNotIn("dummy-test-only", json.dumps(result))
         self.assertEqual(requests[0].full_url, server_module.TOKEN_ENDPOINT)
-        self.assertEqual(broker.issue()[0], 429)
+        self.assertEqual(broker.issue()[0], 200)
+        self.assertEqual(len(requests), 2)
 
     def test_quota_has_no_paid_fallback_or_retry(self):
         calls = []
@@ -64,17 +65,12 @@ class BrokerTests(unittest.TestCase):
         broker = server_module.Broker(self.env(), fake)
         self.assertEqual(broker.issue()[0], 429)
         self.assertEqual(broker.issue()[0], 429)
-        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(calls), 2)
 
-    def test_local_cooldown_and_daily_limit_are_distinct_from_provider_quota(self):
+    def test_daily_limit_still_blocks_without_contacting_provider(self):
         def forbidden(*_, **__):
             self.fail("Local limit must not contact provider")
         broker = server_module.Broker(self.env(), forbidden)
-        broker.last = server_module.time.monotonic()
-        status, body = broker.issue()
-        self.assertEqual(status, 429)
-        self.assertEqual(body["code"], "local_cooldown")
-        self.assertGreater(body["retryAfterSeconds"], 0)
         broker.count = 10
         self.assertEqual(broker.issue()[1]["code"], "local_daily_limit")
 
