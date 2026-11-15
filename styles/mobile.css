@@ -1,0 +1,58 @@
+.touch-controls{display:none}
+.mobile #viewport{height:100dvh;overflow:hidden}
+.mobile #stage{inset:0;width:100%;height:100%;transform:none}
+.mobile #scene{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.mobile #stage.in-game{touch-action:none;user-select:none;-webkit-user-select:none}
+.mobile .topline{inset:max(14px,env(safe-area-inset-top)) 16px auto;font-size:9px;letter-spacing:1px;gap:12px}
+.mobile .topline>span:first-child{display:none}
+.mobile .topline>span:last-child{margin-left:auto}
+.mobile .menu{inset:55px 0 130px;width:100%;padding:0 22px;overflow-y:auto;overscroll-behavior:contain;background:linear-gradient(90deg,#030b12dc,#030b1260);touch-action:pan-y}
+.mobile h1{font-size:60px;letter-spacing:-3px;margin:20px 0}
+.mobile h1 span{font-size:95px;letter-spacing:5px}
+.mobile h1 em{left:255px;bottom:10px;font-size:12px}
+.mobile .eyebrow{font-size:10px;letter-spacing:1px}
+.mobile .intro{font-size:17px;margin:12px 0}
+.mobile .primary,.mobile .secondary{width:100%;min-height:48px;height:auto;padding:14px 16px;font-size:13px;letter-spacing:1px}
+.mobile .menu-tools{width:100%;gap:8px}
+.mobile .menu-tools .secondary{flex:1;width:0;font-size:11px;min-height:48px}
+.mobile .mode-select{width:100%;gap:8px}.mobile .mode-select button{flex:1;min-height:44px;padding:8px;font-size:11px}
+.mobile #mode-description{font-size:11px;line-height:1.5;width:auto}
+.mobile .build-label{margin-top:18px;font-size:10px}
+.mobile .profile-tools{position:static;margin-top:8px}
+.mobile #profile-name,.mobile #profile-status{position:static;width:auto;font-size:11px;margin:8px 0}
+.mobile .specimen,.mobile #gamepad-status{display:none}
+.mobile footer{inset:auto 12px max(10px,env(safe-area-inset-bottom));display:block;letter-spacing:0;font-size:9px}
+.mobile footer #status{display:block;margin:6px 0}
+.mobile .utilities{gap:6px}.mobile footer button{flex:1;min-height:44px;padding:8px 4px;font-size:10px}
+.mobile #assistant-open{right:12px;bottom:90px;padding:12px;min-height:44px;font-size:11px}
+.mobile .in-game footer,.mobile .in-game #assistant-open{display:none}
+.mobile .hud-values{left:12px;right:65px;top:46px;gap:12px;flex-wrap:wrap}
+.mobile .hud-values small{font-size:8px;letter-spacing:0}.mobile .hud-values strong{font-size:17px;margin-top:4px}
+.mobile .hud-values>div:nth-child(n+4){display:none}
+.mobile #pause-button{top:42px;right:12px;padding:12px;min-width:44px;min-height:44px;font-size:11px}
+.mobile .sector-track{left:12px;right:12px;top:108px}
+.mobile .control-hint{bottom:max(18px,env(safe-area-inset-bottom));font-size:10px;letter-spacing:0;pointer-events:none}
+.mobile .control-hint span{margin:0}.mobile .desktop-controls{display:none}.mobile .touch-controls{display:inline}
+.mobile #hud,.mobile .topline{pointer-events:none}.mobile #pause-button{pointer-events:auto}
+.mobile .game-overlay{z-index:3;padding:16px;overflow-y:auto;touch-action:pan-y}
+.mobile .panel{width:min(100%,440px);padding:22px}.mobile .panel h2{font-size:28px;margin:14px 0}
+.mobile .final-score{font-size:42px}.mobile .results{margin:16px 0;gap:10px}.mobile .key-note{display:none}
+.mobile dialog,.mobile #players-dialog,.mobile #gamepad-dialog,.mobile #chapters{width:calc(100% - 24px);max-width:520px;max-height:calc(100dvh - 24px);padding:20px;overflow-y:auto;transform:none;touch-action:pan-y}
+.mobile dialog h2,.mobile #players-dialog h2,.mobile #chapters h2{font-size:25px}
+.mobile dialog p,.mobile .instructions p{font-size:15px;line-height:1.5}
+.mobile dialog input,.mobile dialog select{font-size:16px}
+.mobile .setting-row{gap:12px;font-size:15px;margin:16px 0}.mobile .setting-row select,.mobile .setting-row input[type=range]{width:50%}
+.mobile #story-chapter{font-size:16px}.mobile .chapter-actions{flex-wrap:wrap;gap:8px}
+.mobile #assistant-panel{z-index:5;inset:8px;width:auto;height:auto;max-height:calc(100dvh - 16px);overflow-y:auto;padding:12px;touch-action:pan-y;user-select:text}
+.mobile #assistant-panel button{min-height:44px}.mobile #assistant-provider{min-width:0;width:0;font-size:16px!important}
+.mobile #assistant-input{font-size:16px!important}.mobile #assistant-history{flex:1 0 100px;max-height:35dvh}
+.mobile #assistant-panel .assistant-heading p{display:none}.mobile #assistant-disclosure{font-size:10px}
+.mobile #sector-toast{top:140px;padding:0 16px}.mobile #sector-toast h2{font-size:25px;letter-spacing:2px}
+.mobile #sector-toast p,.mobile #sector-toast small{font-size:10px;letter-spacing:1px}
+.mobile #credits-roll{top:100px;height:65%}.mobile #credits-content{width:100%;padding:16px}
+.mobile #credits-content h2{font-size:32px}.mobile #credits-content p{font-size:20px}.mobile #credits-content small{font-size:12px}
+.mobile .victory-panel{inset:auto 12px 20px;width:auto;height:auto;padding:16px;flex-wrap:wrap;gap:12px}
+.mobile .victory-panel h2{font-size:26px}.mobile .victory-panel .primary,.mobile .victory-panel .secondary{width:100%;margin:0}
+.mobile #award-win{font-size:36px;top:130px}.mobile #ending-caption{font-size:16px;left:16px;right:16px;width:auto}
+.mobile #error{inset:100px 16px;padding:20px;font-size:16px}
+@media(max-height:500px){.mobile .menu{inset:36px 0 75px;padding-right:45%;}.mobile h1{font-size:36px;margin:8px 0}.mobile h1 span{font-size:54px}.mobile h1 em{display:none}.mobile .intro{font-size:14px}.mobile #assistant-open{bottom:80px}.mobile footer #status{display:none}.mobile .control-hint{bottom:10px}}

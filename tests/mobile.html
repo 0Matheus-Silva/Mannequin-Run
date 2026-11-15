@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{background:#17232d;color:#cde;display:flex;gap:20px}iframe{border:0;flex-shrink:0}pre{white-space:pre-wrap}</style></head><body><iframe id="frame" src="../index.html" width="390" height="844"></iframe><pre id="result">RUNNING</pre><script type="module">
+const rows=[],check=(ok,label)=>{if(!ok)throw Error(label);rows.push('PASS '+label);};
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+try{
+ const frame=document.querySelector('#frame');for(let i=0;i<200;i++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await wait(100);}
+ const doc=frame.contentDocument,win=frame.contentWindow;
+ const ready=new Promise(r=>doc.addEventListener('test-ready',e=>r(e.detail),{once:true}));
+ const script=doc.createElement('script');script.type='module';script.textContent="import {game,players,assistant} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:{game,players,assistant}}));";doc.body.append(script);
+ const {game,players}=await ready;await players.ready;game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);
+ check(doc.documentElement.classList.contains('mobile'),'Portrait uses mobile layout');
+ check(Math.abs(game.camera.aspect-390/844)<.01,'Portrait camera matches viewport');
+ const rect=doc.querySelector('#play').getBoundingClientRect();check(rect.width>=250&&rect.height>=44&&rect.right<=390,'Start button fits and has touch target');
+ doc.querySelector('#play').click();for(let i=0;i<50&&!doc.querySelector('#players-dialog').open;i++)await wait(100);check(doc.querySelector('#players-dialog').open,'Starting requests player name on mobile');doc.querySelector('#players-dialog').close();
+ const dialog=doc.querySelector('#settings');dialog.showModal();const dr=dialog.getBoundingClientRect();check(dr.width<=390&&dr.left>=0&&dr.height<=844,'Settings dialog fits mobile viewport');dialog.close();
+ game.startRun();game.setState('playing');game.track.reset();game.motion.reset();
+ const stage=doc.querySelector('#stage'),fire=(target,type,x,y)=>target.dispatchEvent(new win.PointerEvent(type,{bubbles:true,pointerType:'touch',pointerId:7,isPrimary:true,clientX:x,clientY:y}));
+ const swipe=(target,x,y)=>{fire(target,'pointerdown',180,350);fire(target,'pointermove',180+x,350+y);fire(target,'pointerup',180+x,350+y);};
+ // Synthetic events do not own a native pointer; avoid capture in this fixture.
+ stage.setPointerCapture=()=>{};
+ swipe(doc.querySelector('#scene'),60,0);check(game.motion.lane===1,'Swipe right moves one lane');
+ swipe(doc.querySelector('#scene'),-60,0);check(game.motion.lane===0,'Swipe left moves one lane');
+ swipe(doc.querySelector('#scene'),0,-60);check(game.motion.velocityY>0||game.motion.action==='jump'||game.motion.y>0,'Swipe up jumps');
+ game.motion.reset();swipe(doc.querySelector('#scene'),0,60);check(game.motion.sliding||game.motion.slideTime>0||game.motion.action==='slide','Swipe down slides');
+ game.motion.reset();swipe(doc.querySelector('#pause-button'),60,0);check(game.motion.lane===0,'Swipes on pause control do not move player');
+ game.pause();swipe(doc.querySelector('#scene'),60,0);check(game.motion.lane===0,'Paused game ignores swipes');
+ game.setState('menu');frame.width=844;frame.height=390;await wait(250);
+ check(game.ui.mobile&&Math.abs(game.camera.aspect-844/390)<.01,'Landscape camera matches viewport');
+ frame.width=390;frame.height=844;await wait(250);game.ui.resize();game.update();
+ doc.querySelector('#assistant-open').click();const ar=doc.querySelector('#assistant-panel').getBoundingClientRect();check(ar.left>=0&&ar.right<=390&&ar.bottom<=844,'Chatbot fits portrait');doc.querySelector('#assistant-minimize').click();
+ if(new URLSearchParams(location.search).has('play')){game.startRun();game.clock.getDelta=()=>1/60;for(let i=0;i<90;i++)game.update();}
+ document.querySelector('#result').textContent=rows.join('\n')+'\nALL PASS';
+}catch(error){document.querySelector('#result').textContent=rows.join('\n')+'\nFAIL '+error.stack;}
+window.benchmarkDone=true;
+</script></body></html>

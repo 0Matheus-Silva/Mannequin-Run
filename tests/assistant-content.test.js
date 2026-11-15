@@ -32,8 +32,9 @@ test('specific questions route to every project stage without replaying the pres
  for(const [question,topic]of queries){const answer=await new DemoProvider(knowledge,personality).reply(question);assert.ok(answer.startsWith(knowledge[topic]),question);assert.ok(!answer.includes(knowledge.presentation),question);}
  for(const [question,topic]of [['Apresente o jogo','game'],['Apresente o hardware','hardware'],['Apresente a máquina virtual','vm']])assert.ok((await new DemoProvider(knowledge,personality).reply(question)).startsWith(knowledge[topic]),question);
 });
-test('scope keeps mobile and QR unavailable and distinguishes local ranking from online',async()=>{
+test('scope describes mobile web gestures, keeps QR unavailable and distinguishes local ranking from online',async()=>{
  const d=new DemoProvider(knowledge,personality);for(const q of ['Tem QR Code?','Tem versão mobile?','Posso usar celular?','Existe ranking online?'])assert.ok((await d.reply(q)).startsWith(knowledge.scope),q);
+ assert.match(knowledge.scope,/versão web adaptada para celular/);assert.match(knowledge.controls,/deslize o dedo/);
  assert.match(knowledge.controls,/teste físico.*não foi confirmado/);assert.match(knowledge.persistence,/ranking online público confirmado/);
  assert.match(await d.reply('Qual fonte de alimentação?'),/Não tenho essa informação/);
  assert.match(await d.reply('Qual hipervisor?'),/Não tenho essa informação/);

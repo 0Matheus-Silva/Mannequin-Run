@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="./styles/assistant.css">
   <link rel="stylesheet" href="./styles/players.css">
+  <link rel="stylesheet" href="./styles/mobile.css">
   <script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js"}}</script>
 </head>
 <body>
@@ -33,7 +34,7 @@
         <div class="hud-values"><div><small>PONTUAÇÃO</small><strong id="score">0</strong></div><div><small>DISTÂNCIA</small><strong id="distance">0 m</strong></div><div><small>COMPONENTES</small><strong id="items">0</strong></div><div><small>RECORDE</small><strong id="best">0</strong></div><div><small>VELOCIDADE</small><strong id="speed">43 km/h</strong></div></div>
         <div class="sector-track"><div id="sector-progress"></div></div>
         <button id="pause-button" class="pause-button" aria-label="Pausar partida">Ⅱ / ESC</button>
-        <div class="control-hint">A D / FAIXAS <span>↑ ESPAÇO / SALTAR</span> S ↓ / DESLIZAR</div>
+        <div class="control-hint"><span class="desktop-controls">A D / FAIXAS · ↑ ESPAÇO / SALTAR · S ↓ / DESLIZAR</span><span class="touch-controls">DESLIZE ← → FAIXAS · ↑ PULAR · ↓ DESLIZAR</span></div>
       </section>
       <section id="pause-panel" class="game-overlay" hidden aria-labelledby="pause-title">
         <div class="panel"><p class="eyebrow">CONEXÃO EM ESPERA</p><h2 id="pause-title">PAUSADO</h2><button id="resume" class="primary">CONTINUAR <span>↗</span></button><button data-restart class="secondary">REINICIAR</button><button data-menu class="secondary">MENU PRINCIPAL</button></div>
@@ -65,6 +66,7 @@
       <footer><span id="status" role="status">INICIALIZANDO SISTEMAS…</span><div class="utilities"><button id="audio-button" aria-pressed="true">♪ ÁUDIO LIGADO</button><button id="settings-open">CONFIGURAÇÕES</button><button id="fullscreen">⛶ TELA CHEIA</button></div></footer>
       <dialog id="help">
         <p class="eyebrow">PROTOCOLO DE SOBREVIVÊNCIA</p><h2>Continue em movimento.</h2>
+        <p>No celular, deslize o dedo na área do jogo: esquerda ou direita para trocar de faixa, para cima para pular e para baixo para deslizar. Cada gesto executa uma ação. Use o botão de pausa para parar a partida.</p>
         <div class="instructions"><p><kbd>A</kbd> <kbd>←</kbd> / <kbd>D</kbd> <kbd>→</kbd> Trocar de faixa</p><p><kbd>ESPAÇO</kbd> <kbd>↑</kbd> Saltar barreiras baixas amarelas</p><p><kbd>S</kbd> <kbd>↓</kbd> Deslizar sob vigas vermelhas</p><p><kbd>ESC</kbd> Pausar / continuar · <kbd>R</kbd> Reiniciar após colisão</p></div>
         <p>Desvie dos obstáculos altos. Cada componente ciano vale 75 pontos. Siga os arcos de componentes saltando barreiras e as trilhas baixas deslizando sob estruturas. Outras trilhas indicam mudanças de faixa. Há sempre uma faixa livre: a coleta é opcional. A velocidade aumenta com a distância.</p>
         <button id="help-close" class="primary">ENTENDIDO <span>↗</span></button>

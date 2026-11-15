@@ -7,7 +7,7 @@ export class VoiceOutput{
   enqueue(base64,rate=24000){
     if(!this.context)return;const samples=decodePCM(base64);if(!samples.length)return;
     if(this.context.state==='suspended')void this.context.resume().catch(()=>{});
-    if((this.nextTime??0)-this.context.currentTime>60)throw Error('Fila de áudio excedeu um minuto. Interrompa a fala e tente novamente.');
+    if((this.nextTime??0)-this.context.currentTime+samples.length/rate>180)throw Error('Fila de áudio excedeu três minutos. Interrompa a fala e tente novamente.');
     const buffer=this.context.createBuffer(1,samples.length,rate);buffer.copyToChannel(samples,0);const source=this.context.createBufferSource();source.buffer=buffer;source.connect(this.gain);
     this.nextTime=Math.max(this.context.currentTime+.015,this.nextTime??0);this.nodes.add(source);this.onState(true);source.start(this.nextTime);this.nextTime+=buffer.duration;
     source.onended=()=>{source.disconnect();this.nodes.delete(source);if(!this.nodes.size)this.onState(false);};

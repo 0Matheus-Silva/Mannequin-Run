@@ -12,7 +12,12 @@ export class GeminiProvider{
       const socket=this.socket=new this.Socket(LIVE_ENDPOINT+'?access_token='+encodeURIComponent(credentials.token));
       const timer=setTimeout(()=>{reject(Error('Tempo de conexão excedido. Tente a demonstração local.'));this.close();},12000);
       socket.onopen=()=>socket.send(JSON.stringify({setup:credentials.setup}));
-      socket.onmessage=event=>{this.serial=this.serial.then(async()=>{try{const message=JSON.parse(typeof event.data==='string'?event.data:await event.data.text());if(message.setupComplete){clearTimeout(timer);resolve();}this.handle(message);}catch{this.emit({type:'error',text:'Resposta inválida do provedor.'});this.close();}});};
+      socket.onmessage=event=>{this.serial=this.serial.then(async()=>{
+        let message;try{message=JSON.parse(typeof event.data==='string'?event.data:await event.data.text());}
+        catch{this.emit({type:'error',text:'Resposta inválida do provedor.'});this.close();return;}
+        if(message.setupComplete){clearTimeout(timer);resolve();}
+        try{this.handle(message);}catch{this.emit({type:'error',text:'Não foi possível reproduzir o áudio recebido. Interrompa a fala e reconecte.'});this.close();}
+      });};
       socket.onerror=()=>{clearTimeout(timer);reject(Error(providerError(503)));};
       socket.onclose=event=>{clearTimeout(timer);reject(Error(providerError(event.code)));if(!this.closed)this.emit({type:'error',text:providerError(event.code)});};
     });
@@ -30,7 +35,7 @@ export class GeminiProvider{
     if(content.turnComplete)this.emit({type:'turn'});
   }
   send(value){if(this.socket?.readyState===1&&this.socket.bufferedAmount<262144)this.socket.send(JSON.stringify(value));}
-  reply(text){this.send({realtimeInput:{text}});}
+  reply(text){this.send({clientContent:{turns:[{role:'user',parts:[{text}]}],turnComplete:true}});}
   audio(pcm){this.send({realtimeInput:{audio:{data:pcmBase64(pcm),mimeType:'audio/pcm;rate=16000'}}});}
   endAudio(){this.send({realtimeInput:{audioStreamEnd:true}});}
   close(){this.closed=true;clearTimeout(this.timer);if(this.socket){this.socket.onclose=null;this.socket.close();this.socket=null;}}

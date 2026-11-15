@@ -6,11 +6,14 @@ export class UI {
   constructor() {
     this.stage = document.querySelector('#stage');
     this.resize = () => {
+      this.mobile=matchMedia('(max-width:700px), (max-width:1100px) and (max-height:500px), (pointer:coarse) and (max-width:1100px)').matches;
+      document.documentElement.classList.toggle('mobile',this.mobile);
       const scale = Math.min(innerWidth / 1920, innerHeight / 1080);
       // The fixed logical canvas never reflows; the complete composition scales.
-      this.stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+      this.stage.style.transform = this.mobile?'none':`translate(-50%, -50%) scale(${scale})`;
       // Modal dialogs enter the browser top layer and do not inherit the stage transform.
-      for(const dialog of document.querySelectorAll('dialog')) dialog.style.transform=`scale(${scale})`;
+      for(const dialog of document.querySelectorAll('dialog')) dialog.style.transform=this.mobile?'none':`scale(${scale})`;
+      this.game?.resizeView();
     };
     addEventListener('resize', this.resize);
     this.resize();

@@ -4,6 +4,7 @@ import { SectorWorld } from '../environments/SectorWorld.js';
 import { sectorAt } from '../environments/Sectors.js';
 import { PlayerController } from '../player/PlayerController.js';
 import { Input } from './Input.js';
+import { SwipeInput } from './SwipeInput.js';
 import { TrackObjects } from '../obstacles/TrackObjects.js';
 import { Records, RunSession } from './RunSession.js';
 import { AudioEngine } from '../audio/AudioEngine.js';
@@ -78,6 +79,7 @@ export class Game {
     }, () => this.crash());
     this.setQuality(this.settings.quality);
     this.input = new Input(action => this.action(action));
+    this.swipes=new SwipeInput(document.querySelector('#stage'),action=>this.action(action),{enabled:()=>this.state==='playing'&&!document.querySelector('dialog[open]')});
     this.menuCursor=new GamepadCursor(this);
     this.gamepad=new GamepadInput(action=>this.action(action),{isPlaying:()=>this.state==='playing'&&!document.querySelector('dialog[open]')&&!document.activeElement?.closest?.('#assistant-panel input'),onPointer:(pad,mapping)=>this.menuCursor.update(pad,mapping),onMenu:key=>{if(!this.menuCursor.handle(key)){menuControl(this,key);if(['left','right','up','down'].includes(key))this.menuCursor.snapToFocus();}},onStatus:text=>{const node=document.querySelector('#gamepad-status');if(node)node.textContent=text;}});
     this.desiredCamera = new THREE.Vector3(); this.desiredTarget = new THREE.Vector3();
@@ -113,12 +115,20 @@ export class Game {
   setQuality(quality) {
     const levels={eco:{scale:.65,shadows:false},standard:{scale:1,shadows:true},high:{scale:Math.min(devicePixelRatio,1.5),shadows:true}};
     const level=levels[quality]??levels.standard;
-    this.renderer.setPixelRatio(level.scale);this.renderer.setSize(1920,1080,false);
+    this.renderer.setPixelRatio(this.ui.mobile?Math.min(level.scale,1):level.scale);this.resizeView(false);
     this.renderer.shadowMap.enabled=level.shadows;
     this.renderPipeline.setQuality(quality);
     this.world.setQuality(quality);
     this.scene.traverse(node=>{if(node.isMesh){const materials=Array.isArray(node.material)?node.material:[node.material];for(const material of materials)material.needsUpdate=true;}});
     this.settings.quality=quality in levels?quality:'standard';this.settings.save();
+  }
+
+  resizeView(refresh=true){
+    const mobile=this.ui.mobile,width=mobile?innerWidth:1920,height=mobile?innerHeight:1080;
+    this.renderer.setSize(width,height,false);this.camera.aspect=width/height;
+    this.camera.fov=mobile?THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(24))*Math.max(1,1.15/this.camera.aspect))):48;
+    this.camera.updateProjectionMatrix();
+    if(refresh)this.renderPipeline.setQuality(this.settings.quality);
   }
 
   pause(){this.resumeState=this.state;this.setState('paused');}
