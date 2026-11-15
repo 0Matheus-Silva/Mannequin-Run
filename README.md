@@ -1,5 +1,9 @@
 # MANNEQUIN RUN
 
+**GitHub Pages:** o link público executa o jogo e a demonstração local. Gemini Live e MySQL exigem os servidores da versão completa; veja [como executar no GitHub e localmente](./docs/EXECUCAO-GITHUB.md).
+
+**Execução local com jogadores MySQL e controle DualSense:** execute `powershell -ExecutionPolicy Bypass -File .\Start-Local.ps1` e abra **http://127.0.0.1:8084**. O inicializador cria o banco automaticamente após configurar as credenciais locais; não instala serviços Windows. Veja [configuração, salvamento, backup e testes](./docs/MYSQL-JOGADORES-DUALSENSE.md). Gemini permanece no backend Python existente.
+
 **Jogar no navegador:** [MANNEQUIN RUN no GitHub Pages](https://0matheus-silva.github.io/Mannequin-Run/).
 
 **Último ajuste:** fala direta “Ai, minha língua!”, sem repetições; apresentações começam assim que termina o pouso, com ritmo 40% mais rápido e câmera contínua. Entrada da UniFECAF com fechamento lateral direito e superior, sem vão para o interior. [Publicação e funcionamento no Pages](./docs/PUBLICACAO.md). Os relatórios abaixo são registros de versões anteriores.

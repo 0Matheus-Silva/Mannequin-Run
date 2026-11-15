@@ -15,7 +15,7 @@ export class Records {
 
 export class RunSession {
   constructor(records) { this.records = records; this.reset(); }
-  reset(mode='infinite') { this.mode=mode==='story'?'story':'infinite';this.distance = 0;this.startDistance=0;this.practice=false; this.items = 0; this.time = 0; this.ended = false; }
+  reset(mode='infinite') { this.mode=mode==='story'?'story':'infinite';this.distance = 0;this.startDistance=0;this.practice=false;this.resumed=false; this.items = 0; this.time = 0; this.ended = false; }
   get speed() { return Math.min(28, 12 + this.distance / 150); }
   get score() { return Math.floor((this.distance-this.startDistance) * 10 + this.items * 75); }
   update(dt) { if (!this.ended) { this.time += dt; this.distance += this.speed * dt; } }

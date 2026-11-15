@@ -14,7 +14,7 @@ try {
   const angle = player.legs[0].pivot.rotation.x;
   player.update(.1, true);
   assert(angle !== player.legs[0].pivot.rotation.x, 'Running animation changes leg pose');
-  assert(player.root.children.length === 1, 'Visual adapter exposes a single root');
+  assert(player.root.children.includes(player.body) && player.rollBall.parent === player.root, 'Visual adapter keeps body and compact roll under the same root');
   const world = new Laboratory(new THREE.Scene());
   const count = world.root.children.length;
   for (let i = 0; i < 7200; i++) world.update(1 / 60, 12);
@@ -33,7 +33,7 @@ try {
   const gl = doc.querySelector('canvas').getContext('webgl2');
   assert(gl && gl.getParameter(gl.MAX_TEXTURE_SIZE) > 0, 'WebGL2 context is active');
   const ready=new Promise(resolve=>doc.addEventListener('test-ready',event=>resolve(event.detail),{once:true}));
-  const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);
+  const script=doc.createElement('script');script.type='module';script.textContent="import {game,players} from './src/main.js';players.requestStart=start=>start();document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);
   const game=await ready;game.renderer.setAnimationLoop(null);
   doc.querySelector('#play').click();
   game.advance(2.65);

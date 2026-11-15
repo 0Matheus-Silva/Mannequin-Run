@@ -20,8 +20,7 @@ class BrokerTests(unittest.TestCase):
         self.assertIn("sarcasmo leve", text)
         self.assertIn("uma a três frases", text)
         facts = json.loads((ROOT / "assets/assistant/knowledge.json").read_text(encoding="utf-8"))
-        for value in facts.values():
-            self.assertIn(value, text)
+        self.assertEqual(json.loads(text.split("\nBASE OFICIAL:\n", 1)[1]), facts)
 
     def env(self):
         return {"GEMINI_ENABLED": "true", "GEMINI_AUDIENCE_REVIEW": "approved-adults-only", "GEMINI_FREE_TIER_CONFIRMED": "true", "GEMINI_API_KEY": "dummy-test-only"}
@@ -40,7 +39,8 @@ class BrokerTests(unittest.TestCase):
     def test_short_single_use_constrained_token(self):
         body = server_module.token_payload()
         self.assertEqual(body["uses"], 1)
-        self.assertEqual(body["liveConnectConstraints"]["model"], "models/gemini-3.8-live")
+        self.assertEqual(body["bidiGenerateContentSetup"], server_module.live_setup())
+        self.assertNotIn("liveConnectConstraints", body)
         self.assertIn("newSessionExpireTime", body)
         self.assertEqual(server_module.live_setup()["generationConfig"]["speechConfig"]["voiceConfig"]["prebuiltVoiceConfig"]["voiceName"], "Sadachbia")
 
@@ -65,6 +65,26 @@ class BrokerTests(unittest.TestCase):
         self.assertEqual(broker.issue()[0], 429)
         self.assertEqual(broker.issue()[0], 429)
         self.assertEqual(len(calls), 1)
+
+    def test_local_cooldown_and_daily_limit_are_distinct_from_provider_quota(self):
+        def forbidden(*_, **__):
+            self.fail("Local limit must not contact provider")
+        broker = server_module.Broker(self.env(), forbidden)
+        broker.last = server_module.time.monotonic()
+        status, body = broker.issue()
+        self.assertEqual(status, 429)
+        self.assertEqual(body["code"], "local_cooldown")
+        self.assertGreater(body["retryAfterSeconds"], 0)
+        broker.count = 10
+        self.assertEqual(broker.issue()[1]["code"], "local_daily_limit")
+
+    def test_google_quota_is_identified_without_exposing_provider_details(self):
+        def fake(request, timeout):
+            raise urllib.error.HTTPError(request.full_url, 429, "private detail", {}, None)
+        status, body = server_module.Broker(self.env(), fake).issue()
+        self.assertEqual(status, 429)
+        self.assertEqual(body["code"], "provider_quota")
+        self.assertNotIn("private detail", json.dumps(body))
 
     def test_network_failure_sanitized(self):
         def fake(*_, **__):

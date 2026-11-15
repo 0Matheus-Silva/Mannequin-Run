@@ -1,4 +1,4 @@
-param([int]$Port=8080,[int]$DebugPort=9234,[string]$Page='tests/performance.html',[string]$Report='performance.txt',[switch]$Hardware,[switch]$FakeMicrophone)
+param([int]$Port=8080,[int]$DebugPort=9234,[string]$Page='tests/performance.html',[string]$Report='performance.txt',[switch]$Hardware,[switch]$FakeMicrophone,[ValidateSet('Edge','Chrome')][string]$Browser='Edge')
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $outputRoot=Join-Path $projectRoot '.tmp-qa'
@@ -7,7 +7,8 @@ $profile=Join-Path $projectRoot ('.tmp-edge-bench-'+[Guid]::NewGuid().ToString('
 $argsList=@('--headless','--use-angle=swiftshader','--enable-unsafe-swiftshader','--no-first-run','--disable-background-timer-throttling','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows',"--user-data-dir=$profile",'--window-size=1920,1080',"--remote-debugging-port=$DebugPort",'--remote-debugging-address=127.0.0.1',"http://localhost:$Port/$Page")
 if($Hardware){$argsList=@($argsList|Where-Object {$_ -ne '--use-angle=swiftshader' -and $_ -ne '--enable-unsafe-swiftshader'})}
 if($FakeMicrophone){$argsList+=@('--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--autoplay-policy=no-user-gesture-required')}
-Start-Process -FilePath 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe' -WindowStyle Hidden -ArgumentList $argsList -RedirectStandardOutput (Join-Path $outputRoot 'benchmark-browser.txt') -RedirectStandardError (Join-Path $outputRoot 'benchmark-browser.log')
+$browserPath=if($Browser -eq 'Chrome'){'C:\Program Files\Google\Chrome\Application\chrome.exe'}else{'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'}
+Start-Process -FilePath $browserPath -WindowStyle Hidden -ArgumentList $argsList -RedirectStandardOutput (Join-Path $outputRoot 'benchmark-browser.txt') -RedirectStandardError (Join-Path $outputRoot 'benchmark-browser.log')
 $socket=[Net.WebSockets.ClientWebSocket]::new()
 $cancel=[Threading.CancellationTokenSource]::new(120000)
 $script:messageId=0

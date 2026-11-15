@@ -7,6 +7,7 @@
   <title>MANNEQUIN RUN</title>
   <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="./styles/assistant.css">
+  <link rel="stylesheet" href="./styles/players.css">
   <script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js"}}</script>
 </head>
 <body>
@@ -24,6 +25,8 @@
         <button id="play" class="primary">INICIAR <span>↗</span></button>
         <div class="menu-tools"><button id="help-open" class="secondary">COMO JOGAR <span>+</span></button><button id="chapters-open" class="secondary">CAPÍTULOS <span>↗</span></button></div>
         <div class="build-label"><span>RECORDE PESSOAL</span> <b id="menu-best">0</b></div>
+        <div class="menu-tools profile-tools"><button id="profiles-open" class="secondary">JOGADORES / RANKING</button><button id="gamepad-open" class="secondary">TESTAR CONTROLE</button></div>
+        <p id="profile-name">Nenhum jogador selecionado</p><p id="profile-status" role="status"></p>
       </section>
       <aside class="specimen" id="specimen"><span>UNIDADE 001</span><strong>MANNEQUIN</strong><small>ESTRUTURA SINTÉTICA / NÚCLEO ATIVO</small><div class="specimen-line"></div></aside>
       <section id="hud" hidden aria-label="Dados da partida">
@@ -39,6 +42,7 @@
         <div class="panel"><p class="eyebrow">PROTOCOLO INTERROMPIDO</p><h2 id="over-title">FIM DE JOGO</h2><div class="final-score" id="final-score">0</div><div class="results"><span>DISTÂNCIA <b id="final-distance"></b></span><span>COMPONENTES <b id="final-items"></b></span><span>RECORDE <b id="final-best"></b></span></div><button data-restart class="primary">REINICIAR <span>↗</span></button><button data-menu class="secondary">MENU PRINCIPAL</button><p class="key-note">PRESSIONE R PARA REINICIAR</p></div>
       </section>
       <p id="storage-note" hidden>Recorde disponível apenas nesta sessão: armazenamento local indisponível.</p>
+      <p id="gamepad-status" role="status">Teclado disponível · conecte um controle e pressione um botão.</p>
       <p id="ending-caption" hidden></p>
       <div id="award-win" hidden>WIN! <span>1º LUGAR — EXPOTECH 2026</span></div>
       <section id="victory-panel" class="victory-panel" hidden aria-labelledby="victory-title"><p class="eyebrow">A JORNADA ENCONTROU SEU DESTINO</p><h2 id="victory-title">MANNEQUIN RUN</h2><p>UniFECAF · EXPOTECH 2026</p><strong>PRIMEIRO LUGAR</strong><button id="credits-replay" class="secondary">VER CRÉDITOS</button><button data-menu class="primary">VOLTAR AO INÍCIO <span>↗</span></button></section>
@@ -47,7 +51,7 @@
       <div id="hit-flash" aria-hidden="true"></div>
       <button id="assistant-open" aria-expanded="false" aria-controls="assistant-panel">◈ CONVERSAR COM MANNEQUIN</button>
       <aside id="assistant-panel" hidden aria-label="Converse com o personagem MANNEQUIN RUN" data-state="idle">
-        <header class="assistant-heading"><svg class="assistant-avatar" viewBox="0 0 100 110" aria-label="Avatar de capuz e máscara ciano" role="img"><path d="M9 105V50Q7 2 50 3Q93 2 91 50V105L77 97V46Q76 18 50 16Q24 18 23 46V97Z" fill="#182931"/><ellipse cx="50" cy="55" rx="28" ry="38" fill="#030b11"/><g fill="none" stroke="#5ae6ef" stroke-width="1.7"><path d="M29 48Q25 26 42 27Q52 28 51 43M29 53Q32 62 41 60M57 42Q56 24 65 21M57 48L74 54M77 62Q69 75 78 80M28 72Q38 69 39 91"/><ellipse cx="53" cy="70" rx="8" ry="11"/></g></svg><div><small>UNIDADE CONVERSACIONAL</small><h2>MANNEQUIN RUN</h2><p>Capuz, circuitos e algumas boas perguntas.</p></div><button id="assistant-minimize" aria-label="Minimizar conversa">−</button></header>
+        <header class="assistant-heading"><svg class="assistant-avatar" viewBox="0 0 100 110" preserveAspectRatio="xMidYMid meet" aria-label="Personagem de frente, com capuz preto e máscara ciano de três filtros" role="img"><defs><linearGradient id="avatar-hood" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#26333c"/><stop offset="1" stop-color="#0b1118"/></linearGradient><radialGradient id="avatar-mask"><stop stop-color="#142430"/><stop offset="1" stop-color="#03090f"/></radialGradient></defs><path d="M7 107L10 48Q11 5 50 4Q89 5 90 48L93 107L74 101L69 87H31L26 101Z" fill="url(#avatar-hood)"/><path d="M22 83L20 47Q21 16 50 13Q79 16 80 47L78 83" fill="none" stroke="#3c4a54" stroke-width="2"/><ellipse cx="50" cy="54" rx="29" ry="37" fill="url(#avatar-mask)"/><g fill="#06121c" stroke="#5ae6ef" stroke-width="1.6" stroke-linejoin="round"><path d="M47 39L37 32L25 32L27 45L35 55L44 52Z"/><path d="M53 39L63 32L75 32L73 45L65 55L56 52Z"/><ellipse cx="24" cy="73" rx="10" ry="13"/><ellipse cx="76" cy="73" rx="10" ry="13"/><circle cx="50" cy="72" r="10"/></g><g stroke="#38505b" stroke-width="1.3"><path d="M18 69H30M18 73H30M18 77H30M70 69H82M70 73H82M70 77H82"/><path d="M45 69H55M45 72H55M45 75H55"/></g><path d="M30 94L24 106M70 94L76 106" stroke="#67727a" stroke-width="1.5"/></svg><div><small>UNIDADE CONVERSACIONAL</small><h2>MANNEQUIN RUN</h2><p>Capuz, circuitos e algumas boas perguntas.</p></div><button id="assistant-minimize" aria-label="Minimizar conversa">−</button></header>
         <p id="assistant-disclosure"></p>
         <div class="assistant-provider-row"><label for="assistant-provider">Conexão</label><select id="assistant-provider"><option value="demo">Demonstração local</option><option value="live">Gemini Live (requer configuração)</option></select></div>
         <div id="assistant-external" hidden><p>Áudio e texto enviados ao Google. No serviço gratuito, dados podem ser usados para aprimorar produtos e revistos por pessoas. Não informe dados pessoais. Público e cota devem ser revisados pela equipe; este aceite não verifica idade.</p><label><input id="assistant-consent" type="checkbox"> Entendi o processamento externo desta sessão.</label></div>
@@ -81,6 +85,16 @@
         <button id="settings-close" class="primary">VOLTAR <span>↗</span></button>
       </dialog>
       <dialog id="chapters" aria-labelledby="chapters-title"><p class="eyebrow">MODO HISTÓRIA</p><h2 id="chapters-title">Selecionar fase da campanha</h2><label for="story-chapter">Escolha o trecho</label><select id="story-chapter" size="8"></select><p>O início da campanha mantém a partida normal. Os outros trechos permitem avaliar cenas e jogar sem alterar seu recorde.</p><div class="chapter-actions"><button id="chapter-start" class="primary">INICIAR TRECHO <span>↗</span></button><button id="chapters-close" class="secondary">VOLTAR</button></div></dialog>
+      <dialog id="players-dialog" aria-labelledby="players-title">
+        <p class="eyebrow">PERFIS LOCAIS</p><h2 id="players-title">QUEM VAI JOGAR?</h2>
+        <label for="player-search">Nome, apelido ou identificador do perfil</label><input id="player-search" maxlength="48" autocomplete="off" placeholder="Digite seu apelido para criar ou procurar">
+        <div class="profile-actions"><button id="player-new" class="primary">NOVO JOGADOR</button><button id="player-play" class="secondary" disabled>JOGAR COM PERFIL</button><button id="player-resume" class="secondary" disabled>CONTINUAR HISTÓRIA</button></div>
+        <p id="players-status" role="status"></p><div id="player-list" aria-label="Perfis anteriores"></div><div id="player-history" aria-label="Resultados e histórico"></div>
+        <h3>RANKING LOCAL · TOP 10</h3><label for="ranking-mode">Resultados</label><select id="ranking-mode"><option value="all">Geral</option><option value="infinite">Modo Infinito</option><option value="story">Modo História</option></select><div id="player-ranking"></div>
+        <div class="profile-actions"><button id="players-export" class="secondary">EXPORTAR RESULTADOS</button><button id="player-end-session" class="secondary">PRÓXIMO VISITANTE</button><button id="player-delete" class="secondary" disabled>EXCLUIR PERFIL</button></div>
+        <div class="profile-actions"><button id="player-guest" class="secondary">VISITANTE SEM SALVAR</button><button id="player-close" class="secondary" data-pad-back>VOLTAR</button></div>
+      </dialog>
+      <dialog id="gamepad-dialog" aria-labelledby="gamepad-title"><p class="eyebrow">DIAGNÓSTICO DE ENTRADA</p><h2 id="gamepad-title">DUALSENSE / CONTROLE</h2><p>Analógico esquerdo ou direcional: faixas · X: salto / confirmar · Círculo: deslize / voltar · Options: pausa. Solte o comando entre ações.</p><pre id="gamepad-readings"></pre><p>Layout não padrão? Clique no comando abaixo, solte todos os botões e pressione o botão correspondente. Para o eixo, mova o analógico esquerdo horizontalmente. Calibração fica apenas neste navegador.</p><div class="profile-actions"><button data-calibrate="cross">X</button><button data-calibrate="circle">CÍRCULO</button><button data-calibrate="options">OPTIONS</button><button data-calibrate="axis">EIXO HORIZONTAL</button><button data-calibrate="left">←</button><button data-calibrate="right">→</button><button data-calibrate="up">↑</button><button data-calibrate="down">↓</button></div><button id="gamepad-close" class="primary" data-pad-back>VOLTAR</button></dialog>
       <section id="error" hidden role="alert"><h2>Não foi possível iniciar o 3D.</h2><p id="error-message"></p><p>Use um navegador atualizado com aceleração gráfica e abra o projeto pelo servidor local.</p></section>
     </div>
   </main>

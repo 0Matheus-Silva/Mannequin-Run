@@ -17,10 +17,13 @@ import { Passages } from '../environments/Passages.js';
 import { storyComplete } from './Progression.js';
 import { StoryFinale } from '../story/StoryFinale.js';
 import { chapterById } from './Chapters.js';
+import { GamepadInput,menuControl } from './GamepadInput.js';
+import { GamepadCursor } from './GamepadCursor.js';
 
 export class Game {
   constructor(canvas, ui) {
     this.ui = ui;
+    this.events=new EventTarget();
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     this.renderer.setSize(1920, 1080, false);
@@ -75,6 +78,8 @@ export class Game {
     }, () => this.crash());
     this.setQuality(this.settings.quality);
     this.input = new Input(action => this.action(action));
+    this.menuCursor=new GamepadCursor(this);
+    this.gamepad=new GamepadInput(action=>this.action(action),{isPlaying:()=>this.state==='playing'&&!document.querySelector('dialog[open]')&&!document.activeElement?.closest?.('#assistant-panel input'),onPointer:(pad,mapping)=>this.menuCursor.update(pad,mapping),onMenu:key=>{if(!this.menuCursor.handle(key)){menuControl(this,key);if(['left','right','up','down'].includes(key))this.menuCursor.snapToFocus();}},onStatus:text=>{const node=document.querySelector('#gamepad-status');if(node)node.textContent=text;}});
     this.desiredCamera = new THREE.Vector3(); this.desiredTarget = new THREE.Vector3();
     this.clock = new THREE.Clock();
     this.state = 'menu';
@@ -126,9 +131,11 @@ export class Game {
     this.sequence.begin(this.player.root.rotation.y,this.camera.position,this.target);
     this.audio.setSector(0,false);void this.audio.unlock();
     this.setState('starting');document.activeElement?.blur();
+    this.events.dispatchEvent(new CustomEvent('runstart'));
   }
 
-  startRun(chapterId=this.activeChapter??'campaign') {
+  startRun(chapterId=this.activeChapter??'campaign',checkpoint=null) {
+    this.events.dispatchEvent(new CustomEvent('beforerunreset'));
     const chapter=chapterById(this.settings.mode==='story'?chapterId:'campaign');this.activeChapter=chapter.id;
     this.motion.reset(); this.session.reset(this.settings.mode);this.world.mode=this.settings.mode; this.track.reset();this.finale?.reset();this.world.root.visible=true;this.passages.reset();this.fallElapsed=0;
     this.world.reset(); this.sector = 0; this.ui.sector(0, true);
@@ -145,6 +152,8 @@ export class Game {
       if(chapter.endingTime!==undefined){this.startEnding();this.finale.seek(chapter.endingTime);}
       this.update();this.ui.status('TRECHO DO MODO HISTÓRIA / '+chapter.name);
     }
+    if(checkpoint){this.session.distance=Number(checkpoint.distance);this.session.items=Number(checkpoint.items);this.session.time=Number(checkpoint.duration);this.session.startDistance=0;this.session.practice=false;this.session.resumed=true;this.ui.status('CAMPANHA RETOMADA DO CHECKPOINT');}
+    this.events.dispatchEvent(new CustomEvent('runstart'));
   }
 
   launchChapter(id){if(this.state!=='menu')return;this.chooseMode('story');const chapter=chapterById(id);if(chapter.id==='campaign')this.beginRun();else this.startRun(chapter.id);}
@@ -152,11 +161,13 @@ export class Game {
   crash() {
     if (this.state !== 'playing') return;
     this.session.finish();this.fallElapsed=0;this.player.impactTime=0;this.effects.burst(this.motion.x,1,0,true);this.audio.effect('crash');this.ui.hit();this.setState('falling');
+    this.events.dispatchEvent(new CustomEvent('runfinish',{detail:{result:'crashed'}}));
   }
 
   chooseMode(mode){if(this.state!=='menu')return;this.activeChapter='campaign';this.settings.mode=mode==='story'?'story':'infinite';this.settings.save();this.ui.mode(this.settings.mode);}
   startEnding(){
     this.session.distance=2400;this.session.finish();this.track.reset();this.passages.reset();
+    this.events.dispatchEvent(new CustomEvent('runfinish',{detail:{result:'completed'}}));
     this.finale??=new StoryFinale(this);this.finale.start();this.setState('ending');
   }
 
@@ -167,6 +178,7 @@ export class Game {
     if(state==='playing')void this.audio.unlock();
     this.track.root.visible = !['menu','starting','ending','victory'].includes(state)&&!(state==='paused'&&['ending','victory'].includes(this.resumeState));
     this.ui.setState(state, this.session);
+    this.events.dispatchEvent(new CustomEvent('statechange',{detail:{state}}));
   }
 
   start() {
@@ -185,7 +197,9 @@ export class Game {
     if (this.state !== 'playing') return;
     while (dt > 1e-8 && this.state === 'playing') {
       const step = Math.min(dt, 1/120);
+      const beforeDistance=this.session.distance;
       this.motion.update(step); this.session.update(step);
+      if(this.session.mode==='story'&&!this.session.practice)for(const distance of [600,1200,1800,2300])if(beforeDistance<distance&&this.session.distance>=distance)this.events.dispatchEvent(new CustomEvent('checkpoint',{detail:{distance}}));
       if(storyComplete(this.session.mode,this.session.distance)){this.startEnding();return;}
       this.world.update(step, this.session.speed, this.session.distance);
       this.passages.update(this.session.distance,this.session.mode);
@@ -197,6 +211,7 @@ export class Game {
   }
 
   update() {
+    this.gamepad?.poll();
     const dt = Math.min(this.clock.getDelta(), .05);
     this.elapsed += dt;
     this.advance(dt);

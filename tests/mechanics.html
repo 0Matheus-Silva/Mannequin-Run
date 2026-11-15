@@ -29,7 +29,7 @@ try {
   for(let i=0;i<100;i++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
   const doc=frame.contentDocument;
   const ready=new Promise(resolve=>doc.addEventListener('test-ready',e=>resolve(e.detail),{once:true}));
-  const script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js'; document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);
+  const script=doc.createElement('script');script.type='module';script.textContent="import {game,players} from './src/main.js';players.requestStart=start=>start(); document.dispatchEvent(new CustomEvent('test-ready',{detail:game}));";doc.body.append(script);
   const game=await ready;check(!!game,'Game initializes with live UI');game.renderer.setAnimationLoop(null);
   doc.querySelector('#play').click();game.advance(2.65);check(game.state==='playing'&&!doc.querySelector('#hud').hidden,'Play completes cinematic and starts session and HUD');
   game.advance(.5);const distance=game.session.distance;game.action('pause');game.advance(1);check(game.session.distance===distance&&game.state==='paused','Pause freezes simulation');

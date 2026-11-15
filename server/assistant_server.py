@@ -4,6 +4,7 @@ import datetime as dt
 import http.server
 import json
 import mimetypes
+import math
 import os
 from pathlib import Path
 import secrets
@@ -61,7 +62,7 @@ def token_payload(now=None):
     stamp = lambda value: value.isoformat().replace("+00:00", "Z")
     return {"uses": 1, "expireTime": stamp(now + dt.timedelta(seconds=180)),
             "newSessionExpireTime": stamp(now + dt.timedelta(seconds=30)),
-            "liveConnectConstraints": {"model": "models/" + MODEL, "config": {"responseModalities": ["AUDIO"]}}}
+            "bidiGenerateContentSetup": live_setup()}
 
 
 class Broker:
@@ -81,8 +82,12 @@ class Broker:
         with self.lock:
             if self.day != dt.date.today():
                 self.day, self.count = dt.date.today(), 0
-            if time.monotonic() - self.last < 180 or self.count >= 10:
-                return 429, {"error": "Limite local atingido. Sem novas tentativas automáticas ou fallback pago."}
+            if self.count >= 10:
+                return 429, {"code": "local_daily_limit", "error": "Limite local de dez emissões por dia atingido. Tente novamente amanhã. Nenhum serviço pago foi ativado."}
+            remaining = math.ceil(180 - (time.monotonic() - self.last))
+            if remaining > 0:
+                return 429, {"code": "local_cooldown", "retryAfterSeconds": remaining,
+                             "error": f"Aguarde {remaining} segundos antes de reconectar: intervalo local de proteção. Isso não indica falta de cota no Google."}
             self.last, self.count = time.monotonic(), self.count + 1
         request = urllib.request.Request(TOKEN_ENDPOINT, data=json.dumps(token_payload()).encode(), method="POST",
                                          headers={"Content-Type": "application/json", "x-goog-api-key": self.env["GEMINI_API_KEY"]})
@@ -95,7 +100,8 @@ class Broker:
         except urllib.error.HTTPError as error:
             status = 429 if error.code == 429 else 503
             error.close()
-            return status, {"error": "Cota indisponível." if status == 429 else "Provedor indisponível; nenhum detalhe de credencial é exposto."}
+            return status, {"code": "provider_quota" if status == 429 else "provider_unavailable",
+                            "error": "O Google recusou a solicitação por cota ou limite de requisições. Confira os limites do projeto no AI Studio; nenhum serviço pago foi ativado." if status == 429 else "Provedor indisponível; nenhum detalhe de credencial é exposto."}
         except (OSError, ValueError, KeyError):
             return 503, {"error": "Provedor indisponível. Use a demonstração local."}
 

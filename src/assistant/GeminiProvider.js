@@ -2,11 +2,11 @@ import { LIVE_ENDPOINT, ASSISTANT_CONFIG } from './Config.js';
 export const pcmBase64=pcm=>{const bytes=new Uint8Array(pcm.length*2),view=new DataView(bytes.buffer);for(let i=0;i<pcm.length;i++)view.setInt16(i*2,pcm[i],true);let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary);};
 export function providerError(code){return ({429:'Cota indisponível. A conexão foi encerrada, sem troca automática para serviço pago.',403:'Integração bloqueada. A equipe precisa revisar público, termos e configuração.',503:'API não configurada ou indisponível. A demonstração local continua disponível.',1008:'Sessão recusada pelo provedor. Verifique configuração e cota antes de tentar novamente.'})[code]??'Conexão interrompida. O microfone foi desligado. Reconecte manualmente ou use a demonstração local.';}
 export class GeminiProvider{
-  constructor(emit,{fetcher=fetch,Socket=WebSocket}={}){this.emit=emit;this.fetcher=fetcher;this.Socket=Socket;this.kind='live';this.closed=false;this.serial=Promise.resolve();}
+  constructor(emit,{fetcher=(...args)=>globalThis.fetch(...args),Socket=WebSocket}={}){this.emit=emit;this.fetcher=fetcher;this.Socket=Socket;this.kind='live';this.closed=false;this.serial=Promise.resolve();}
   async connect(){
     const configResponse=await this.fetcher('/api/assistant/config',{cache:'no-store'});if(!configResponse.ok)throw Error(providerError(503));const config=await configResponse.json();if(!config.ready)throw Error(config.reason??providerError(403));
     const response=await this.fetcher('/api/assistant/token',{method:'POST',headers:{'Content-Type':'application/json','X-Assistant-CSRF':config.csrf},body:'{}',signal:AbortSignal.timeout(15000)});
-    if(!response.ok)throw Error(providerError(response.status));const credentials=await response.json();
+    if(!response.ok){const failure=await response.json().catch(()=>null);const known=['local_cooldown','local_daily_limit','provider_quota','provider_unavailable'];throw Error(known.includes(failure?.code)&&typeof failure.error==='string'?failure.error:providerError(response.status));}const credentials=await response.json();
     if(this.closed)return;
     await new Promise((resolve,reject)=>{
       const socket=this.socket=new this.Socket(LIVE_ENDPOINT+'?access_token='+encodeURIComponent(credentials.token));

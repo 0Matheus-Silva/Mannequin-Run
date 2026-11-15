@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Cursor do controle</title></head><body><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+const rows=[],check=(v,n)=>{if(!v)throw Error(n);rows.push('PASS '+n);};
+try{
+ const frame=document.querySelector('#frame');for(let n=0;n<180;n++){if(frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE'))break;await new Promise(r=>setTimeout(r,100));}
+ const doc=frame.contentDocument,ready=new Promise(resolve=>doc.addEventListener('qa-ready',e=>resolve(e.detail),{once:true})),script=doc.createElement('script');script.type='module';script.textContent="import {game,players} from './src/main.js';document.dispatchEvent(new CustomEvent('qa-ready',{detail:{game,players}}));";doc.body.append(script);const {game,players}=await ready;await players.ready;game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);game.clock.getDelta=()=>0;
+ const cursor=game.menuCursor,pad={axes:[0,0]},mapping={axis:0};
+ cursor.update(null,null);check(cursor.node.hidden,'Cursor oculto sem controle');
+ cursor.update(pad,mapping);check(!cursor.node.hidden&&cursor.node.matches(':popover-open'),'Cursor azul aparece no menu com controle');
+ const play=doc.querySelector('#play').getBoundingClientRect();check(Math.abs(cursor.x-(play.left+play.width/2))<1,'Cursor inicia sobre INICIAR');
+ const original=cursor.x;cursor.last=frame.contentWindow.performance.now()-16;cursor.update({axes:[1,0]},mapping);check(cursor.x>original,'Analógico movimenta cursor continuamente');
+ cursor.center(doc.querySelector('#play'));cursor.handle('cross');for(let n=0;n<30&&!doc.querySelector('#players-dialog').open;n++)await new Promise(r=>setTimeout(r,50));check(doc.querySelector('#players-dialog').open,'X sobre INICIAR abre identificação automaticamente');
+ cursor.update(pad,mapping);const input=doc.querySelector('#player-search');cursor.center(input);cursor.handle('cross');check(doc.activeElement===input,'Cursor alcança entrada de nome dentro do diálogo');
+ doc.querySelector('#players-dialog').close();players.pendingStart=null;
+ players.current={id:crypto.randomUUID(),name:'Perfil anterior'};await players.requestStart(()=>{});check(doc.querySelector('#players-dialog').open,'INICIAR pede identificação mesmo com perfil anterior selecionado');players.current=null;doc.querySelector('#players-dialog').close();players.pendingStart=null;
+ game.startRun();cursor.update(pad,mapping);check(cursor.node.hidden,'Cursor desaparece durante a corrida');
+ game.setState('menu');cursor.update(pad,mapping);cursor.update(null,null);check(cursor.node.hidden,'Desconectar esconde o cursor');
+ clearInterval(players.timer);
+ if(new URLSearchParams(location.search).has('preview')){await players.open();cursor.update(pad,mapping);cursor.center(doc.querySelector('#player-search'));cursor.update(pad,mapping);}
+}catch(e){rows.push('FAIL '+e.stack);}
+document.querySelector('#result').textContent=rows.join('\n')+'\n'+(rows.some(r=>r.startsWith('FAIL'))?'FAILED':'ALL PASS');window.benchmarkDone=true;
+</script></body></html>

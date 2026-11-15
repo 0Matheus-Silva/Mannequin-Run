@@ -1,0 +1,17 @@
+{
+  "name": "mannequin-run-local",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node server/local-server.js",
+    "db:setup": "node tools/database.js setup",
+    "db:migrate": "node tools/database.js migrate",
+    "db:backup": "node tools/database.js backup",
+    "db:export": "node tools/database.js export",
+    "test": "node --test tests/persistence.test.js tests/gamepad.test.js tests/slide-pickups.test.js tests/assistant-content.test.js tests/voice-output.test.js",
+    "test:mysql": "node --test --test-concurrency=1 tests/mysql.integration.test.js tests/backup.integration.test.js"
+  },
+  "dependencies": { "mysql2": "^3.15.3" }
+}

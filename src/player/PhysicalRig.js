@@ -39,15 +39,28 @@ export function buildPhysicalRig(rig){
   box(rig.torso,rig.graphite,0,.1,.16,.47,.69,.1);
   box(rig.torso,rig.graphite,0,-.04,.155,.62,.96,.09);
   rig.hardware=group(rig.torso,0,.055,-.17);rig.hardware.userData.kind='open-computer';rig.hardware.scale.set(1.15,1.02,1);
-  const board=new THREE.MeshStandardMaterial({color:0x164322,emissive:0x087517,emissiveIntensity:.65,roughness:.68,metalness:.3});
+  const board=new THREE.MeshStandardMaterial({color:0x102c1a,emissive:0x06400c,emissiveIntensity:.22,roughness:.68,metalness:.3});
+  const innerMetal=new THREE.MeshStandardMaterial({color:0x263138,metalness:.65,roughness:.48});
   const gold=new THREE.MeshStandardMaterial({color:0xb69a54,metalness:.55,roughness:.5});
-  box(rig.hardware,rig.dark,0,-.02,0,.43,.57,.18);box(rig.hardware,board,0,.015,-.103,.37,.47,.018);
-  for(const x of [-.205,.205])box(rig.hardware,rig.chrome,x,-.02,-.12,.018,.58,.025);
-  for(const y of [-.3,.26])box(rig.hardware,rig.chrome,0,y,-.12,.43,.018,.025);
+  // Recessed motherboard and deep side walls separate the enclosure from its raised components.
+  box(rig.hardware,rig.dark,0,-.02,.035,.43,.57,.11);box(rig.hardware,board,0,.015,-.032,.37,.47,.018);
+  for(const x of [-.205,.205]){
+    box(rig.hardware,innerMetal,x,-.02,-.115,.022,.58,.21);
+    box(rig.hardware,rig.chrome,x,-.02,-.224,.018,.58,.012);
+  }
+  for(const y of [-.3,.26]){
+    box(rig.hardware,innerMetal,0,y,-.115,.43,.02,.21);
+    box(rig.hardware,rig.chrome,0,y,-.224,.43,.012,.012);
+  }
+  for(const x of [-.18,.18])for(const y of [-.275,.235])oval(rig.hardware,rig.chrome,x,y,-.235,.009,.009,.004);
+  for(let n=0;n<5;n++)box(rig.hardware,gold,-.145+n*.025,-.035,-.045,.007,.12,.003);
   for(let n=0;n<3;n++){box(rig.hardware,rig.dark,.115-n*.05,.12,-.125,.028,.21,.04);box(rig.hardware,gold,.115-n*.05,.23,-.15,.024,.015,.015);}
-  const fan=group(rig.hardware,-.065,.105,-.15);
+  box(rig.hardware,innerMetal,-.065,.105,-.091,.205,.205,.09);
+  for(let n=0;n<9;n++)box(rig.hardware,rig.chrome,-.151+n*.021,.105,-.141,.007,.18,.025);
+  const fan=group(rig.hardware,-.065,.105,-.19);
+  const fanWell=new THREE.Mesh(new THREE.CylinderGeometry(.089,.089,.035,24),rig.dark);fanWell.rotation.x=Math.PI/2;fanWell.position.z=.019;fan.add(fanWell);
   const ring=new THREE.Mesh(new THREE.TorusGeometry(.092,.012,6,24),rig.greenGlow);fan.add(ring);
-  for(let n=0;n<7;n++){const blade=oval(fan,rig.dark,0,0,0,.025,.08,.009);blade.position.set(Math.sin(n*6.28/7)*.035,Math.cos(n*6.28/7)*.035,0);blade.rotation.z=-n*6.28/7+.5;}
+  for(let n=0;n<7;n++){const blade=oval(fan,innerMetal,0,0,0,.025,.08,.009);blade.position.set(Math.sin(n*6.28/7)*.035,Math.cos(n*6.28/7)*.035,0);blade.rotation.z=-n*6.28/7+.5;}
   oval(fan,rig.greenGlow,0,0,-.012,.023,.023,.012);
   box(rig.hardware,rig.dark,0,-.145,-.16,.37,.1,.09);
   for(let n=0;n<13;n++)box(rig.hardware,rig.chrome,-.16+n*.026,-.145,-.21,.009,.075,.018);

@@ -8,6 +8,8 @@ dist/
 !.env.example
 __pycache__/
 *.pyc
+.data/
+.tools/
 # Local reference packages; the playable game is in assets/src/styles.
 /MANNEQUIN_RUN_Codex_Visual_Package/
 /MANNEQUIN_RUN_Pacote_Personagem_Fisico_e_Fases/

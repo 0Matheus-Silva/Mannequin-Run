@@ -1,5 +1,9 @@
 # Relatório de desenvolvimento
 
+## Jogadores MySQL e DualSense — 15/11/2026
+
+O banco `mannequin_run` foi criado no MySQL Community local existente, com tabelas de jogadores, partidas, progresso, checkpoints e conquistas. O servidor Node adicional oferece pool, consultas parametrizadas, transações, perfis por UUID, histórico, ranking e backup/exportação. O Gemini continua no backend Python, acessível pelo proxy da porta 8084. Há fila IndexedDB para falhas do backend e limpeza do chatbot na troca de visitante. O controle usa as mesmas ações do teclado, com painel de teste/calibração. Provisionamento idempotente, backup/restauração, persistência e fluxo de perfis foram testados no MySQL real e nos navegadores Edge/Chrome; DualSense físico ainda precisa de validação manual. Consulte [o relatório completo](./MYSQL-JOGADORES-DUALSENSE.md).
+
 ## Entrega atual — personagem físico, fases e créditos
 
 O [relatório do personagem físico, capítulos e créditos](./PERSONAGEM-FISICO-FASES-CREDITOS.md) descreve o novo manequim de roupa preta, capuz, máscara ciano e computador exposto, baseado na fotografia obrigatória. O menu oferece oito trechos, incluindo chegada, entrada e cerimônia. Os créditos CDC2NA com Fabiano Matheus de Camargo Silva, Pedro Henrique Freitas de Oliveira e Vitor Barioni Ferraz sobem cinco segundos após o protagonista ocupar o pódio; possuem opção automática e reprodução manual. Foram aprovadas 237 verificações. Tudo permanece local.

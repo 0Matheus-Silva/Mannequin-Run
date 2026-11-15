@@ -27,14 +27,14 @@ export class AssistantSession{
     try{const answer=await this.provider.reply(clean);if(epoch!==this.epoch)return;if(answer){this.message('assistant',answer);this.status('ready');this.voice.speakLocal(answer);}}catch(error){this.fail(error.message);}
   }
   async present(){if(!this.active)await this.start(this.ui.kind(),this.ui.consent());if(!this.active)return;this.interrupt();this.ui.presentation();
-    if(this.kind==='live'){await this.send('Apresente o MANNEQUIN RUN em cerca de um minuto, com a estrutura da apresentação oficial, e termine convidando perguntas.');return;}
+    if(this.kind==='live'){await this.send('Apresente o projeto completo Manequim Run: mencione uma única vez, no começo ou no final, que foi desenvolvido em conjunto por Matheus, Pedro e Victor. Não separe quem fez cada etapa. Explique em ordem manequim físico, hardware, VM, jogo e chatbot, distinguindo recursos físicos dos virtuais. Cubra as cinco etapas com clareza e concisão e termine convidando perguntas.');return;}
     this.message('assistant',this.knowledge.presentation);try{await this.voice.presentation();}catch{this.status('ready','Áudio local indisponível. A apresentação está transcrita acima.');}
   }
   async toggleMic(){
     if(!this.active){this.status('idle','Inicie uma conversa antes de ativar o microfone.');return;}
     if(this.microphone.active){this.microphone.stop();this.provider.endAudio?.();this.ui.mic(false);this.status('ready');return;}
     this.status('permission');
-    try{await this.microphone.start(pcm=>{if(this.kind==='live')this.provider?.audio?.(pcm);},()=>{if(this.state==='speaking')this.interrupt();});if(this.active){this.ui.mic(this.microphone.active);this.status('listening',this.kind==='demo'?'Teste de microfone local: sem transcrição nem envio de áudio. Pergunte por texto.':'Microfone ativo: áudio enviado à Gemini durante esta sessão.');}}
+    try{await this.microphone.start(pcm=>{if(this.kind==='live')this.provider?.audio?.(pcm);},()=>{});if(this.active){this.ui.mic(this.microphone.active);this.status('listening',this.kind==='demo'?'Teste de microfone local: sem transcrição nem envio de áudio. Pergunte por texto.':'Microfone ativo: áudio enviado à Gemini durante esta sessão.');}}
     catch(error){this.ui.mic(false);this.status('ready',error.name==='NotAllowedError'?'Permissão de microfone negada. Você pode continuar por texto.':error.message);}
   }
   interrupt(){this.ignoreAudio=true;this.voice.stop();if(this.active)this.status(this.microphone.active?'listening':'ready');}

@@ -15,8 +15,11 @@ export function overlapsPlayer(player, obstacle, previousZ, z) {
 export function canCollect(player, x, previousZ, z, height=1.25, action='free') {
   if(action==='jump'&&player.y<.65)return false;
   if(action==='slide'&&(player.height>1.15||player.y>.1))return false;
+  // Ordinary lane pickups remain reachable during a grounded slide/roll.
+  // Jump and low-slide routes retain their action and height requirements.
+  const reach=action==='free'&&player.y<=.1?Math.max(player.height,1.55):player.height;
   return Math.min(previousZ, z) <= .65 && Math.max(previousZ, z) >= -.65 &&
-    Math.abs(player.x - x) < .8 && player.y+.08 < height+.22 && player.y + player.height > height-.22;
+    Math.abs(player.x - x) < .8 && player.y+.08 < height+.22 && player.y + reach > height-.22;
 }
 
 export function createPattern(index, random = Math.random) {
