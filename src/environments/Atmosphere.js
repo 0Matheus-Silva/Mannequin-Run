@@ -13,7 +13,7 @@ export class Atmosphere{
   }
   update(distance,mode='infinite'){
     let {current,next,blend}=transitionAt(distance);
-    if(mode==='story'&&distance>=2400){current=1;next=1;blend=0;}else if(mode==='story'&&distance>=2280)next=1;
+    if(mode==='story'&&distance>=2400){current=1;next=1;blend=0;}else if(mode==='story'&&distance>=2280){current=3;next=3;blend=0;}
     this.skyMaterial.uniforms.top.value.copy(this.tops[current]).lerp(this.tops[next],blend);
     this.skyMaterial.uniforms.bottom.value.copy(this.bottoms[current]).lerp(this.bottoms[next],blend);
     const sun=(current===1?1:0)*(1-blend)+(next===1?1:0)*blend;this.sun.material.opacity=sun;this.sun.visible=sun>.001;

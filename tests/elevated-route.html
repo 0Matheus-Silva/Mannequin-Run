@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+const result=document.querySelector('#result'),frame=document.querySelector('#frame');
+try{
+ for(let i=0;i<200&&!frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE');i++)await new Promise(r=>setTimeout(r,100));
+ const doc=frame.contentDocument,ready=new Promise(resolve=>doc.addEventListener('route-ready',e=>resolve(e.detail),{once:true})),script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';import {routeHeight,routeSpawnAllowed} from './src/environments/ElevatedRoute.js';document.dispatchEvent(new CustomEvent('route-ready',{detail:{game,routeHeight,routeSpawnAllowed}}));";doc.body.append(script);
+ const {game,routeHeight,routeSpawnAllowed}=await ready;game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);game.chooseMode('story');game.startRun();game.track.reset();
+ game.session.distance=1459;game.motion.x=0;game.motion.lane=0;game.advance(.1);if(game.state!=='playing'||routeHeight(game.session.distance)<=0)throw Error('Entrada central não iniciou a subida');
+ game.session.distance=1540;game.track.reset();game.update();if(Math.abs(game.player.root.position.y-5.2)>.01)throw Error('Personagem não está sobre a estrada');
+ game.track.spawn(2);const row=game.track.rows.find(r=>r.active);row.group.position.z=-30;game.track.timer=100;game.track.update(.001,20,game.motion,1,1540,()=>false,routeHeight);if(Math.abs(row.group.position.y-5.2)>.01)throw Error('Obstáculo não acompanha a estrada');
+ if(routeSpawnAllowed(1470)||routeSpawnAllowed(1790)||routeHeight(1800)!==0)throw Error('Rampas ou saída incorretas');
+ game.startRun();game.track.reset();game.session.distance=1459;game.motion.x=2.7;game.motion.lane=1;game.advance(.1);if(game.state!=='falling')throw Error('Faixas laterais deveriam estar bloqueadas');
+ game.setState('menu');game.chooseMode('infinite');game.startRun();game.track.reset();game.session.distance=3859;game.motion.x=0;game.motion.lane=0;game.advance(.1);if(game.state!=='playing'||routeHeight(game.session.distance)<=0)throw Error('Percurso não reapareceu no ciclo infinito');
+ result.textContent='PASS entrada obrigatória\nPASS altura do personagem e obstáculos\nPASS descida e transição\nPASS laterais bloqueadas\nPASS ciclo infinito\nALL PASS';
+}catch(e){result.textContent='FAIL '+e.stack;}
+</script>

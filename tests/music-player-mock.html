@@ -1,0 +1,4 @@
+<!doctype html><meta charset="utf-8"><script type="module">
+const channel=new BroadcastChannel('nexus-apple-music-v1');channel.onmessage=event=>{const m=event.data;if(m?.kind==='hello')channel.postMessage({kind:'status',connected:true,playing:false,text:'Teste conectado'});if(m?.kind==='command')channel.postMessage({kind:'response',id:m.id,ok:m.action!=='next',result:{message:'Teste: '+m.action},error:'Sem próxima faixa'});};
+parent.postMessage('music-mock-ready',location.origin);
+</script>

@@ -75,6 +75,14 @@ export function buildPhysicalRig(rig){
   rig.neck=group(rig.body,0,2.06,0);oval(rig.neck,rig.metal,0,-.015,0,.12,.18,.115);
   rig.head=group(rig.neck,0,.2,0);rig.hood=group(rig.head,0,0,0);
   const hood=new THREE.Mesh(new THREE.SphereGeometry(1,28,18,0,Math.PI),rig.graphite);hood.scale.set(.32,.345,.3);hood.position.set(0,.02,.005);rig.hood.add(hood);
+  // Layered fabric at the back and neck gives the hood a draped silhouette.
+  const hoodBack=oval(rig.hood,rig.graphite,0,-.18,.13,.295,.23,.19);hoodBack.rotation.x=-.25;
+  const hoodDrape=oval(rig.hood,rig.graphite,0,-.32,.09,.26,.16,.2);hoodDrape.rotation.x=-.35;
+  for(const side of [-1,1]){
+    tube(rig.hood,seams,[[side*.07,.27,.19],[side*.12,.08,.29],[side*.17,-.12,.27],[side*.2,-.28,.17]],.006);
+    tube(rig.hood,rig.dark,[[side*.23,.04,.19],[side*.27,-.1,.16],[side*.24,-.24,.1]],.008);
+    tube(rig.hood,seams,[[side*.03,-.17,.31],[side*.1,-.28,.26],[side*.19,-.37,.14]],.005);
+  }
   tube(rig.hood,rig.graphite,[[-.22,-.24,-.17],[-.29,.02,-.13],[-.22,.26,-.12],[0,.34,-.1],[.22,.26,-.12],[.29,.02,-.13],[.22,-.24,-.17]],.018);
   for(const side of [-1,1])oval(rig.hood,rig.graphite,side*.26,-.08,.025,.075,.25,.19);
   rig.mask=group(rig.head,0,0,-.16);rig.mask.userData.kind='cyan-segmented-mask';oval(rig.mask,rig.visor,0,0,0,.225,.275,.09);
@@ -87,15 +95,16 @@ export function buildPhysicalRig(rig){
     for(let n=0;n<3;n++)box(rig.mask,seams,side*.205,-.16+n*.035,-.1,.08,.006,.008);
   }
   oval(rig.mask,rig.dark,0,-.105,-.09,.085,.08,.06);
+  tube(rig.mask,seams,[[-.15,-.01,-.085],[-.12,-.09,-.13],[0,-.19,-.14],[.12,-.09,-.13],[.15,-.01,-.085]],.006);
   const respirator=new THREE.Mesh(new THREE.TorusGeometry(.061,.005,6,28),rig.glow);respirator.position.set(0,-.105,-.147);rig.mask.add(respirator);
   for(let n=0;n<5;n++)for(let j=0;j<3;j++)oval(rig.mask,seams,(n-2)*.018,-.105+(j-1)*.022,-.151,.005,.005,.003);
   rig.arms=[-1,1].map(side=>{
     const pivot=group(rig.body,side*.49,1.91,0);oval(pivot,rig.graphite,0,-.025,0,.145,.135,.16);dressed(pivot,0,-.2,0,.135,.48,.15);
     const joint=group(pivot,0,-.43,0);dressed(joint,0,-.17,0,.115,.43,.13);box(joint,rig.dark,0,-.35,0,.18,.08,.19);
     for(let n=0;n<3;n++){const fold=box(joint,seams,side*.06,-.1-n*.065,-.105,.08,.015,.014);fold.rotation.z=side*.18;}
-    const hand=group(joint,0,-.42,0);oval(hand,rig.metal,0,-.04,0,.07,.1,.045);
-    const fingers=Array.from({length:4},(_,n)=>oval(hand,rig.metal,(n-1.5)*.032,-.145,-.005,.014,.065,.02));
-    const thumb=oval(hand,rig.metal,side*.075,-.065,-.015,.024,.06,.025);thumb.rotation.z=side*.4;
+    const hand=group(joint,0,-.42,0);oval(hand,rig.dark,0,-.04,0,.07,.1,.045);
+    const fingers=Array.from({length:4},(_,n)=>oval(hand,rig.dark,(n-1.5)*.032,-.145,-.005,.014,.065,.02));
+    const thumb=oval(hand,rig.dark,side*.075,-.065,-.015,.024,.06,.025);thumb.rotation.z=side*.4;
     return {pivot,joint,hand,fingers};
   });
   rig.legs=[-1,1].map(side=>{
@@ -104,6 +113,7 @@ export function buildPhysicalRig(rig){
     box(joint,rig.dark,0,-.41,0,.18,.08,.21);
     tube(pivot,seams,[[side*.12,-.02,.02],[side*.125,-.2,.04],[side*.1,-.39,.03]],.004);
     const foot=group(joint,0,-.47,0);oval(foot,rig.graphite,0,0,-.07,.115,.065,.23);box(foot,rig.dark,0,-.045,-.07,.21,.035,.38);
+    oval(joint,rig.graphite,0,-.025,-.09,.12,.13,.09);
     for(let n=0;n<3;n++)box(foot,rig.chrome,0,.05,-.1-n*.035,.105,.008,.012);
     box(foot,rig.chrome,0,-.03,-.265,.16,.018,.015);
     return {pivot,joint,foot};

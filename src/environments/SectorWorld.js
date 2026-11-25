@@ -4,6 +4,7 @@ import { SECTORS, transitionAt } from './Sectors.js';
 import { batchMeshes, releaseInstances } from '../utils/batchMeshes.js';
 import { buildExterior } from './SectorArchitecture.js';
 import { sectorAt } from './Sectors.js';
+import { chasmContains,chasmIntersects } from './Chasm.js';
 
 export class SectorWorld extends Laboratory {
   constructor(scene, hemisphere, rim) {
@@ -83,7 +84,7 @@ export class SectorWorld extends Laboratory {
     const previous=this.segments[index];
     if(previous.userData.sector===sector)return previous;
     const next=batchMeshes(this.build(index,sector));next.position.copy(previous.position);next.userData.sector=sector;
-    next.traverse(node=>{if(node.userData.steam)node.visible=this.quality!=='eco';});
+    next.traverse(node=>{if(node.userData.steam||node.userData.industrialSmoke)node.visible=this.quality!=='eco';});
     releaseInstances(previous);
     this.root.remove(previous);this.root.add(next);this.segments[index]=next;
     // Every mesh uses shared geometry/materials; detached nodes are garbage collected.
@@ -96,15 +97,18 @@ export class SectorWorld extends Laboratory {
     this.applyPalette(0);
   }
 
+  chasmAt(x){return this.segments.some(segment=>chasmContains(segment,x,this.length));}
+  chasmNear(z,margin=12){return this.segments.some(segment=>chasmIntersects(segment,z,margin,this.length));}
+
   applyPalette(distance) {
     let {current,next,blend}=transitionAt(distance);
     if(this.mode==='story'&&distance>=2400){current=1;next=1;blend=0;}
-    else if(this.mode==='story'&&distance>=2280){next=1;}
+    else if(this.mode==='story'&&distance>=2280){current=3;next=3;blend=0;}
     this.activeSector=current;
     const a=SECTORS[current],b=SECTORS[next];
     this.scene.background.copy(a.sky).lerp(b.sky,blend);
     this.scene.fog.color.copy(a.fog).lerp(b.fog,blend);
-    const densities=[.025,.014,.021,.035];this.scene.fog.density=THREE.MathUtils.lerp(densities[current],densities[next],blend);
+    const densities=[.025,.014,.012,.016];this.scene.fog.density=THREE.MathUtils.lerp(densities[current],densities[next],blend);
     this.metal.color.copy(a.metal).lerp(b.metal,blend);this.dark.color.copy(a.floor).lerp(b.floor,blend);
     this.light.color.copy(a.accent).lerp(b.accent,blend);this.light.emissive.copy(this.light.color);
     this.screen.emissive.copy(this.light.color).multiplyScalar(.45);
@@ -115,16 +119,18 @@ export class SectorWorld extends Laboratory {
 
   update(dt,speed,distance=this.distance) {
     this.atmosphereTime+=dt;
+    if(this.art?.lava){this.art.lava.map.offset.set(this.atmosphereTime*.008,this.atmosphereTime*.012);this.art.lava.emissiveIntensity=1.45+Math.sin(this.atmosphereTime*1.7)*.2;}
     this.distance=distance;this.applyPalette(distance);
     const transition=transitionAt(distance);
     const architecture=transition.blend>.05?transition.next:transition.current;
     for(let i=0;i<this.segments.length;i++) {
       let segment=this.segments[i];segment.position.z+=dt*speed;
-      if(segment.position.z>32){segment.position.z-=this.length*this.segments.length;const absolute=distance-segment.position.z+8;segment=this.replace(i,this.mode==='story'&&absolute>=2400?1:sectorAt(absolute));}
+      if(segment.position.z>32){segment.position.z-=this.length*this.segments.length;const absolute=distance-segment.position.z+8;segment=this.replace(i,this.mode==='story'&&distance<2400&&absolute>=2400?3:this.mode==='story'&&absolute>=2400?1:sectorAt(absolute));}
       for(const mesh of segment.userData.animated??[]) {
         if(mesh.userData.rotor)mesh.rotation.z+=dt*1.6;
         if(mesh.userData.flame)mesh.scale.y=1.5+Math.sin(distance*.4+i)*.3;
         if(mesh.userData.steam){mesh.position.y=1.4+Math.sin(this.atmosphereTime*.65+i)*.15;mesh.scale.x=2.7+Math.sin(this.atmosphereTime*.4+i)*.3;}
+        if(mesh.userData.industrialSmoke){const smoke=mesh.userData.industrialSmoke,t=this.atmosphereTime*.45+smoke.phase;mesh.position.y=smoke.baseY+(t%2);mesh.position.x=smoke.baseX+Math.sin(t*.7)*.45;}
       }
     }
     const positions=this.dust.geometry.attributes.position;
@@ -136,5 +142,5 @@ export class SectorWorld extends Laboratory {
     }
     positions.needsUpdate=true;
   }
-  setQuality(quality){this.quality=quality;this.root.traverse(node=>{if(node.userData.steam)node.visible=quality!=='eco';});}
+  setQuality(quality){this.quality=quality;this.root.traverse(node=>{if(node.userData.steam||node.userData.industrialSmoke)node.visible=quality!=='eco';});}
 }

@@ -4,7 +4,7 @@ export class Players {
     this.game=game;this.assistant=assistant;this.current=null;this.activeRun=null;this.tail=Promise.resolve();this.apiConfig=null;this.pendingStart=null;this.flushing=false;
     this.dialog=document.querySelector('#players-dialog');this.status=document.querySelector('#players-status');
     this.ready=this.initialize();
-    for(const type of ['runstart','runfinish','checkpoint','statechange','beforerunreset'])game.events.addEventListener(type,e=>this.onGame(type,e.detail));
+    for(const type of ['runstart','runfinish','checkpoint','statechange','beforerunreset','creditsfinished'])game.events.addEventListener(type,e=>this.onGame(type,e.detail));
     addEventListener('online',()=>this.flush());
     document.addEventListener('visibilitychange',()=>{if(document.hidden)this.capture('running');});
     this.timer=setInterval(()=>{if(this.game.state==='playing')this.capture('running');void this.flush();},15000);
@@ -13,8 +13,14 @@ export class Players {
   async initialize(){try{this.local=await new LocalStore().open();this.note('Perfis locais prontos.');await this.flush();}catch{this.note('Armazenamento indisponível. Jogue como visitante sem salvar.');}}
   note(text){this.status.textContent=text;document.querySelector('#profile-status').textContent=text;}
   bind(){
-    document.querySelector('#play').onclick=()=>this.requestStart(()=>this.game.beginRun());
-    document.querySelector('#chapter-start').onclick=()=>{const id=document.querySelector('#story-chapter').value;document.querySelector('#chapters').close();this.requestStart(()=>this.game.launchChapter(id));};
+    document.querySelector('#play').onclick=()=>{this.current=null;this.useRecord();this.game.beginRun();};
+    document.querySelector('#chapter-start').onclick=()=>{const id=document.querySelector('#story-chapter').value;document.querySelector('#chapters').close();this.current=null;this.useRecord();this.game.launchChapter(id);};
+    document.querySelector('#ranking-open').onclick=()=>{document.querySelector('#ranking-dialog').showModal();void this.publicRanking();};
+    document.querySelector('#ranking-close').onclick=()=>document.querySelector('#ranking-dialog').close();
+    document.querySelector('#public-ranking-mode').onchange=()=>this.publicRanking();
+    document.querySelector('#result-form').onsubmit=e=>{e.preventDefault();void this.saveResult();};
+    document.querySelector('#result-skip').onclick=()=>this.skipResult();
+    document.querySelector('#result-dialog').addEventListener('cancel',e=>{e.preventDefault();this.skipResult();});
     document.querySelector('#profiles-open').onclick=()=>this.open();
     document.querySelector('#player-search').oninput=()=>{clearTimeout(this.searchTimer);this.searchTimer=setTimeout(()=>this.search(),180);};
     document.querySelector('#player-new').onclick=()=>this.create();
@@ -66,8 +72,29 @@ export class Players {
       this.activeRun=this.current?{id:crypto.randomUUID(),playerId:this.current.id,revision:0,createdAt:new Date().toISOString()}:null;this.capture('running');
     }
     if(type==='checkpoint')this.capture('checkpoint',detail.distance);
-    if(type==='runfinish')this.capture(detail.result);
-    if(type==='statechange'){if(detail.state==='paused')this.capture('running');if(detail.state==='menu'&&this.activeRun)this.capture('abandoned');}
+    if(type==='runfinish'){
+      if(this.activeRun)this.capture(detail.result);
+      else {const s=this.game.session;this.pendingResult={id:crypto.randomUUID(),revision:1,createdAt:new Date().toISOString(),mode:s.mode,practice:s.practice,resumed:Boolean(s.resumed),startDistance:s.startDistance,score:s.score,distance:s.distance,items:s.items,duration:s.time,result:detail.result,checkpoint:0};}
+    }
+    if(type==='creditsfinished'&&this.pendingResult&&this.game.state==='victory')this.showResult();
+    if(type==='statechange'){if(detail.state==='paused')this.capture('running');if(detail.state==='menu'&&this.activeRun)this.capture('abandoned');if((detail.state==='gameover'||(detail.state==='victory'&&!this.game.settings.credits))&&this.pendingResult)this.showResult();}
+  }
+  showResult(){const dialog=document.querySelector('#result-dialog');if(dialog.open)return;document.querySelector('#result-summary').textContent=`${Math.floor(this.pendingResult.score)} pontos · ${Math.floor(this.pendingResult.distance)} m`+(this.pendingResult.practice?' · trecho de treino (fora do ranking)':'');document.querySelector('#result-name').value='';document.querySelector('#result-status').textContent='';dialog.showModal();document.querySelector('#result-name').focus();}
+  skipResult(){if(document.querySelector('#result-save').disabled)return;this.pendingResult=null;document.querySelector('#result-dialog').close();}
+  async saveResult(){
+    const name=document.querySelector('#result-name').value.trim().normalize('NFC'),status=document.querySelector('#result-status'),button=document.querySelector('#result-save');
+    if(!name||name.length>48||/[\x00-\x1f\x7f]/.test(name)){status.textContent='Digite um nome válido de até 48 caracteres.';return;}
+    await this.ready;if(!this.local){status.textContent='Armazenamento indisponível. Não foi possível salvar; tente novamente.';return;}
+    if(!this.pendingResult)return;button.disabled=true;document.querySelector('#result-skip').disabled=true;
+    try{const now=new Date().toISOString(),p={id:crypto.randomUUID(),name,created_at:now,last_active_at:now},row={...this.pendingResult,playerId:p.id};
+      await this.local.write([{store:'profiles',value:p},{store:'runs',value:row},{store:'outbox',value:{id:'player:'+p.id,kind:'player',payload:p,queuedAt:Date.now()}},{store:'outbox',value:{id:row.id+':1',kind:'run',payload:row,queuedAt:Date.now()+1}}]);
+      this.pendingResult=null;document.querySelector('#result-dialog').close();this.note('Resultado salvo neste navegador; sincronizando com MySQL.');void this.flush();
+    }catch{status.textContent='Não foi possível salvar. Tente novamente.';}finally{button.disabled=false;document.querySelector('#result-skip').disabled=false;}
+  }
+  async publicRanking(){
+    const mode=document.querySelector('#public-ranking-mode').value,container=document.querySelector('#public-ranking');container.textContent='Carregando…';await this.ready;
+    try{const rows=await this.api('/api/ranking?mode='+mode);container.replaceChildren();for(const [i,r]of rows.entries()){const item=document.createElement('p');item.textContent=`${i+1}. ${r.name} · ${r.score} pontos · ${Math.floor(r.distance)} m`;container.append(item);}if(!rows.length)container.textContent='Ainda não há resultados no banco de dados.';}
+    catch{container.textContent='Ranking do banco de dados indisponível. Resultados salvos neste navegador serão sincronizados quando a conexão voltar.';}
   }
   capture(result,checkpoint=0){
     if(!this.activeRun||!this.local)return;const s=this.game.session,r=this.activeRun;

@@ -5,6 +5,7 @@ import { randomBytes } from 'node:crypto';
 import { createPool, root } from './database/config.js';
 import { Store, snapshot } from './database/store.js';
 import { Invalid } from './database/validation.js';
+import { developerToken } from './apple-music/token.js';
 const port=Number(process.env.LOCAL_PORT||8084), assistantPort=Number(process.env.ASSISTANT_PORT||8081);
 let pool,store;try{pool=createPool();store=new Store(pool);}catch{}
 const sessions=new Map(), origins=new Set([`http://127.0.0.1:${port}`,`http://localhost:${port}`]);
@@ -34,6 +35,10 @@ const server=http.createServer(async(req,res)=>{
     if(path.startsWith('/api/')){
       const s=session(req);if(!s)return reply(res,403,{error:'Abra o jogo para iniciar uma sessão local.'});
       if(!['GET','HEAD'].includes(req.method)&&(!origins.has(req.headers.origin)||req.headers['x-local-csrf']!==s.csrf))return reply(res,403,{error:'Requisição não autorizada.'});
+      if(path==='/api/apple-music/config'&&req.method==='GET'){
+        try{return reply(res,200,{developerToken:await developerToken()});}
+        catch(error){return reply(res,503,{error:error.message});}
+      }
       if(!store)return reply(res,503,{error:'MySQL ainda não configurado.'});
       if(path==='/api/players'&&req.method==='GET')return reply(res,200,await store.players(url.searchParams.get('q')||''));
       if(path==='/api/players'&&req.method==='POST')return reply(res,200,await store.createPlayer(await body(req)));

@@ -11,7 +11,7 @@ export class AudioEngine {
   constructor() {
     this.context = null; this.enabled = true; this.volume = .65;
     this.sector = 0; this.playing = false; this.voices = new Set(); this.beat = 0;
-    this.musicEnabled=true;this.musicVolume=.6;this.effectsVolume=.85;this.track='afterglow';this.localTracks=[];this.localAudio=null;this.awardBuffers=new Map();this.musicDuck=1;
+    this.musicEnabled=true;this.externalMusicPlaying=false;this.musicVolume=.6;this.effectsVolume=.85;this.track='afterglow';this.localTracks=[];this.localAudio=null;this.awardBuffers=new Map();this.musicDuck=1;
   }
 
   async unlock() {
@@ -31,7 +31,7 @@ export class AudioEngine {
     const ctx = this.context = new Context();
     this.master = ctx.createGain(); this.master.gain.value = this.enabled ? this.volume : 0;
     this.effectsBus=ctx.createGain();this.effectsBus.gain.value=this.effectsVolume;this.effectsBus.connect(this.master);
-    this.musicBus=ctx.createGain();this.musicBus.gain.value=this.musicEnabled?this.musicVolume:0;this.musicBus.connect(this.master);
+    this.musicBus=ctx.createGain();this.musicBus.gain.value=this.musicEnabled&&!this.externalMusicPlaying?this.musicVolume:0;this.musicBus.connect(this.master);
     const compressor = ctx.createDynamicsCompressor();
     this.master.connect(compressor); compressor.connect(ctx.destination);
     this.ambient = ctx.createGain(); this.ambient.gain.value = .1; this.ambient.connect(this.effectsBus);
@@ -75,7 +75,7 @@ export class AudioEngine {
   setCeremonyDucking(time){
     const duck=time!==null&&time>=27.65&&time<31.2?.24:time!==null&&time>=25.5&&time<26.7?.5:1;
     if(duck===this.musicDuck)return;this.musicDuck=duck;
-    if(this.context)this.musicBus.gain.setTargetAtTime(this.musicEnabled?this.musicVolume*duck:0,this.context.currentTime,.08);
+    if(this.context)this.musicBus.gain.setTargetAtTime(this.musicEnabled&&!this.externalMusicPlaying?this.musicVolume*duck:0,this.context.currentTime,.08);
   }
   setSector(sector,announce=true) {
     this.sector=sector;const preset=PRESETS[sector];if(!this.context)return;
@@ -123,15 +123,16 @@ export class AudioEngine {
   }
   update() {
     const ctx=this.context;if(!ctx||!this.enabled||!this.playing||ctx.state!=='running')return;
-    if(ctx.currentTime>=this.nextBeat&&this.musicEnabled&&!this.localAudio){
+    if(ctx.currentTime>=this.nextBeat&&this.musicEnabled&&!this.externalMusicPlaying&&!this.localAudio){
       const track=MUSIC_TRACKS.find(t=>t.id===this.track)??MUSIC_TRACKS[0];const note=track.notes[this.beat++%track.notes.length];
       this.tone(note,note*.999,1.1,.085,'sine',0,'music');this.tone(note*2,note*2,.7,.016,'triangle',.06,'music');
       if(this.beat%4===0)this.tone(note*.5,note*.5,1.8,.06,'triangle',0,'music');
       this.nextBeat=ctx.currentTime+track.tempo*(1-this.sector*.04);
     }
   }
-  setMusicEnabled(value){this.musicEnabled=!!value;if(this.context)this.musicBus.gain.setTargetAtTime(value?this.musicVolume*this.musicDuck:0,this.context.currentTime,.08);this.syncLocal();}
-  setMusicVolume(value){this.musicVolume=Math.max(0,Math.min(1,value));if(this.context)this.musicBus.gain.setTargetAtTime(this.musicEnabled?this.musicVolume*this.musicDuck:0,this.context.currentTime,.05);}
+  setMusicEnabled(value){this.musicEnabled=!!value;if(this.context)this.musicBus.gain.setTargetAtTime(value&&!this.externalMusicPlaying?this.musicVolume*this.musicDuck:0,this.context.currentTime,.08);this.syncLocal();}
+  setMusicVolume(value){this.musicVolume=Math.max(0,Math.min(1,value));if(this.context)this.musicBus.gain.setTargetAtTime(this.musicEnabled&&!this.externalMusicPlaying?this.musicVolume*this.musicDuck:0,this.context.currentTime,.05);}
+  setExternalMusicPlaying(value){this.externalMusicPlaying=!!value;if(this.context)this.musicBus.gain.setTargetAtTime(this.musicEnabled&&!this.externalMusicPlaying?this.musicVolume*this.musicDuck:0,this.context.currentTime,.08);this.syncLocal();}
   setEffectsVolume(value){this.effectsVolume=Math.max(0,Math.min(1,value));if(this.context)this.effectsBus.gain.setTargetAtTime(this.effectsVolume,this.context.currentTime,.05);}
   selectTrack(id){
     const local=this.localTracks.find(t=>t.id===id);if(!local&&!MUSIC_TRACKS.some(t=>t.id===id))return false;
@@ -146,7 +147,7 @@ export class AudioEngine {
   syncLocal(){
     if(!this.localAudio)return;
     if(this.context&&!this.localSource){this.localSource=this.context.createMediaElementSource(this.localAudio);this.localSource.connect(this.musicBus);}
-    if(this.context?.state==='running'&&this.enabled&&this.playing&&this.musicEnabled)void this.localAudio.play().catch(()=>{});else this.localAudio.pause();
+    if(this.context?.state==='running'&&this.enabled&&this.playing&&this.musicEnabled&&!this.externalMusicPlaying)void this.localAudio.play().catch(()=>{});else this.localAudio.pause();
   }
   async dispose() {this.localAudio?.pause();this.localSource?.disconnect();this.localTracks.forEach(t=>URL.revokeObjectURL(t.url));this.localTracks=[];if(this.context){await this.context.close();this.context=null;this.voices.clear();} }
 }

@@ -1,6 +1,8 @@
 * { box-sizing: border-box; }
 :root { color-scheme: dark; font-family: 'Segoe UI', Arial, sans-serif; color: #e9f2f3; background: #000; }
 body { margin: 0; overflow: hidden; }
+#arrival-fog { position:absolute; inset:0; z-index:30; pointer-events:none; opacity:0; background:radial-gradient(ellipse at 22% 25%,#a0d39acb,transparent 65%),radial-gradient(ellipse at 77% 68%,#6bbd86d9,transparent 68%),#6aad7c; }
+#pause-panel { z-index:31; }
 button { font: inherit; cursor: pointer; }
 button:focus-visible { outline: 3px solid #fff; outline-offset: 6px; }
 [hidden] { display: none !important; }

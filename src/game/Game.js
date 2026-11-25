@@ -6,6 +6,9 @@ import { PlayerController } from '../player/PlayerController.js';
 import { Input } from './Input.js';
 import { SwipeInput } from './SwipeInput.js';
 import { TrackObjects } from '../obstacles/TrackObjects.js';
+import { ElevatedRoute,routeHeight,crossesEntrance,routeSpawnAllowed } from '../environments/ElevatedRoute.js';
+import { arrivalFogOpacity } from '../story/ArrivalFog.js';
+import { fatalCollision } from '../obstacles/Collision.js';
 import { Records, RunSession } from './RunSession.js';
 import { AudioEngine } from '../audio/AudioEngine.js';
 import { Effects } from '../world/Effects.js';
@@ -58,6 +61,7 @@ export class Game {
     const portrait=new THREE.SpotLight(0xc4eafa,55,20,.55,.65,1.6);
     portrait.position.set(-2,4.5,4);portrait.target.position.set(0,1.5,0);this.scene.add(portrait,portrait.target);
     this.world = new SectorWorld(this.scene, hemisphere, rim);
+    this.elevatedRoute=new ElevatedRoute(this.scene);
     this.atmosphere=new Atmosphere(this.scene);this.atmosphere.update(0);
     this.passages=new Passages(this.scene,()=>this.audio?.effect('door'));
     this.finale=null;this.fallElapsed=0;
@@ -76,7 +80,7 @@ export class Game {
     this.session = new RunSession(this.records);
     this.track = new TrackObjects(this.scene, (x,y,z) => {
       this.session.collect();this.effects.burst(x,y,z);this.audio.effect('collect');this.ui.collect();
-    }, () => this.crash());
+    }, type => this.hitObstacle(type));
     this.setQuality(this.settings.quality);
     this.input = new Input(action => this.action(action));
     this.swipes=new SwipeInput(document.querySelector('#stage'),action=>this.action(action),{enabled:()=>this.state==='playing'&&!document.querySelector('dialog[open]')});
@@ -124,7 +128,7 @@ export class Game {
   }
 
   resizeView(refresh=true){
-    const mobile=this.ui.mobile,width=mobile?innerWidth:1920,height=mobile?innerHeight:1080;
+    const mobile=this.ui.mobile,viewport=document.querySelector('#viewport'),width=mobile?Math.max(1,viewport.clientWidth):1920,height=mobile?Math.max(1,viewport.clientHeight):1080;
     this.renderer.setSize(width,height,false);this.camera.aspect=width/height;
     this.camera.fov=mobile?THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(24))*Math.max(1,1.15/this.camera.aspect))):48;
     this.camera.updateProjectionMatrix();
@@ -136,7 +140,7 @@ export class Game {
 
   beginRun(){
     if(this.state!=='menu')return;
-    this.activeChapter='campaign';
+    this.activeChapter='campaign';this.lastStumble=-Infinity;this.fallCause=null;
     this.motion.reset();this.session.reset(this.settings.mode);this.world.mode=this.settings.mode;this.track.reset();this.effects.reset();this.passages.reset();
     this.sequence.begin(this.player.root.rotation.y,this.camera.position,this.target);
     this.audio.setSector(0,false);void this.audio.unlock();
@@ -145,6 +149,7 @@ export class Game {
   }
 
   startRun(chapterId=this.activeChapter??'campaign',checkpoint=null) {
+    this.lastStumble=-Infinity;this.fallCause=null;
     this.events.dispatchEvent(new CustomEvent('beforerunreset'));
     const chapter=chapterById(this.settings.mode==='story'?chapterId:'campaign');this.activeChapter=chapter.id;
     this.motion.reset(); this.session.reset(this.settings.mode);this.world.mode=this.settings.mode; this.track.reset();this.finale?.reset();this.world.root.visible=true;this.passages.reset();this.fallElapsed=0;
@@ -155,7 +160,7 @@ export class Game {
     this.setState('playing'); document.activeElement?.blur();
     if(chapter.id!=='campaign'){
       this.session.distance=chapter.distance;this.session.startDistance=chapter.distance;this.session.practice=true;
-      this.world.segments.forEach((segment,i)=>this.world.replace(i,chapter.distance>=2400?1:sectorAt(chapter.distance-segment.position.z+8)));
+      this.world.segments.forEach((segment,i)=>{const absolute=chapter.distance-segment.position.z+8;this.world.replace(i,chapter.distance>=2400?1:this.settings.mode==='story'&&absolute>=2400?3:sectorAt(absolute));});
       this.world.applyPalette(chapter.distance);this.atmosphere.update(chapter.distance,'story');this.passages.update(chapter.distance,'story');
       this.sector=sectorAt(chapter.distance);this.ui.sector(this.sector,true);this.audio.setSector(this.sector,false);
       this.camera.position.set(0,3.8,7);this.target.set(0,1.4,-7);this.camera.lookAt(this.target);
@@ -168,10 +173,15 @@ export class Game {
 
   launchChapter(id){if(this.state!=='menu')return;this.chooseMode('story');const chapter=chapterById(id);if(chapter.id==='campaign')this.beginRun();else this.startRun(chapter.id);}
 
-  crash() {
+  crash(cause='obstacle') {
     if (this.state !== 'playing') return;
-    this.session.finish();this.fallElapsed=0;this.player.impactTime=0;this.effects.burst(this.motion.x,1,0,true);this.audio.effect('crash');this.ui.hit();this.setState('falling');
+    this.fallCause=cause;this.session.finish();this.fallElapsed=0;this.player.impactTime=0;if(cause!=='chasm'){this.effects.burst(this.motion.x,1,0,true);this.audio.effect('crash');this.ui.hit();}this.setState('falling');
     this.events.dispatchEvent(new CustomEvent('runfinish',{detail:{result:'crashed'}}));
+  }
+
+  hitObstacle(type){
+    if(fatalCollision(type,this.session.time,this.lastStumble??-Infinity)){this.crash();return true;}
+    this.lastStumble=this.session.time;this.ui.hit();this.effects.burst(this.motion.x,.5,0,true);this.audio.effect('crash');return false;
   }
 
   chooseMode(mode){if(this.state!=='menu')return;this.activeChapter='campaign';this.settings.mode=mode==='story'?'story':'infinite';this.settings.save();this.ui.mode(this.settings.mode);}
@@ -209,13 +219,19 @@ export class Game {
       const step = Math.min(dt, 1/120);
       const beforeDistance=this.session.distance;
       this.motion.update(step); this.session.update(step);
+      const cycleBefore=((beforeDistance%2400)+2400)%2400,cycleAfter=((this.session.distance%2400)+2400)%2400;
+      if(cycleBefore<1400&&cycleAfter>=1400)this.ui.status('ESTRADA ELEVADA À FRENTE · SIGA PELA FAIXA CENTRAL');
+      if(crossesEntrance(beforeDistance,this.session.distance)&&Math.abs(this.motion.x)<=1.05)this.ui.status('ESTRADA ELEVADA · CONTINUE A CORRIDA');
       if(this.session.mode==='story'&&!this.session.practice)for(const distance of [600,1200,1800,2300])if(beforeDistance<distance&&this.session.distance>=distance)this.events.dispatchEvent(new CustomEvent('checkpoint',{detail:{distance}}));
       if(storyComplete(this.session.mode,this.session.distance)){this.startEnding();return;}
       this.world.update(step, this.session.speed, this.session.distance);
+      this.elevatedRoute.update(this.session.distance);
       this.passages.update(this.session.distance,this.session.mode);
       const sector = sectorAt(this.session.distance);
       if (sector !== this.sector) { this.sector = sector; this.ui.sector(sector, true);this.audio.setSector(sector); }
-      this.track.update(step, this.session.speed, this.motion, this.session.time,this.session.distance);
+      if(this.motion.y<=.01&&this.motion.velocityY<=0&&this.world.chasmAt(this.motion.x)){this.crash('chasm');return;}
+      if(crossesEntrance(beforeDistance,this.session.distance)&&Math.abs(this.motion.x)>1.05){this.crash();return;}
+      this.track.update(step, this.session.speed, this.motion, this.session.time,this.session.distance,z=>this.world.chasmNear(z)||!routeSpawnAllowed(this.session.distance-z),routeHeight);
       dt -= step;
     }
   }
@@ -228,6 +244,8 @@ export class Game {
     const menu = this.state === 'menu';
     const running = this.state === 'playing';
     const ending=['ending','victory'].includes(this.state)||(this.state==='paused'&&['ending','victory'].includes(this.resumeState));
+    const elevation=menu||ending?0:routeHeight(this.session.distance);
+    this.elevatedRoute.update(menu?0:this.session.distance);if(ending)this.elevatedRoute.root.visible=false;
     this.effects.update(this.state==='paused'?0:dt,running?this.session.speed:0);this.audio.update();
     const cinematic=this.state==='starting'||(this.state==='paused'&&this.resumeState==='starting');
     const animationDt=this.state==='paused'?0:dt;
@@ -235,8 +253,8 @@ export class Game {
     if(!ending)this.audio.setCeremonyDucking(null);
     if(!ending)this.atmosphere.update(menu?0:this.session.distance,this.session.mode);
     const blend = 1 - Math.exp(-dt * 3);
-    this.desiredCamera.set(menu ? 3.1 : this.motion.x * .12, menu ? 2.7 : 3.8, menu ? 6.3 : 7);
-    this.desiredTarget.set(menu ? -2.1 : this.motion.x * .17, menu ? 1.3 : 1.4, menu ? 0 : -7);
+    this.desiredCamera.set(menu ? 3.1 : this.motion.x * .12, menu ? 2.7 : 3.8+elevation, menu ? 6.3 : 7);
+    this.desiredTarget.set(menu ? -2.1 : this.motion.x * .17, menu ? 1.3 : 1.4+elevation, menu ? 0 : -7);
     if(cinematic){
       this.camera.position.lerpVectors(this.sequence.fromCamera,this.desiredCamera,this.sequence.cameraBlend);
       this.target.lerpVectors(this.sequence.fromTarget,this.desiredTarget,this.sequence.cameraBlend);
@@ -248,10 +266,18 @@ export class Game {
     this.camera.lookAt(this.target);
     const desiredFov=this.passages.state?.visible&&!menu?50:48;
     const fov=THREE.MathUtils.damp(this.camera.fov,desiredFov,3,dt);if(Math.abs(fov-this.camera.fov)>.005){this.camera.fov=fov;this.camera.updateProjectionMatrix();}
-    this.player.update(animationDt,ending?this.finale.walking:running||(!menu&&!cinematic),this.motion,['falling','gameover'].includes(this.state)||(this.state==='paused'&&this.resumeState==='falling'),{transition:cinematic?this.sequence:null,cameraPosition:this.camera.position,speed:this.session.speed});
+    const chasmFall=this.fallCause==='chasm'&&(['falling','gameover'].includes(this.state)||(this.state==='paused'&&this.resumeState==='falling'));
+    this.player.update(animationDt,chasmFall?false:ending?this.finale.walking:running||(!menu&&!cinematic),this.motion,!chasmFall&&(['falling','gameover'].includes(this.state)||(this.state==='paused'&&this.resumeState==='falling')),{transition:cinematic?this.sequence:null,cameraPosition:this.camera.position,speed:this.session.speed});
+    this.player.root.position.y+=elevation;
+    const stumbleAge=this.session.time-(this.lastStumble??-Infinity);
+    this.player.root.visible=!(running&&stumbleAge<3&&Math.floor(stumbleAge*8)%2===1);
+    if(running&&stumbleAge>=0&&stumbleAge<.55){const impact=Math.sin(Math.PI*stumbleAge/.55);this.player.body.rotation.x-=impact*.35;this.player.body.rotation.z+=impact*.16;}
+    if(chasmFall){this.player.root.position.y-=Math.min(12,this.fallElapsed*this.fallElapsed*9);this.player.body.rotation.x=-.18;this.player.arms.forEach((arm,i)=>{arm.pivot.rotation.z=(i?1:-1)*.55;arm.pivot.rotation.x=-.35;});}
     if(ending)this.finale.present(animationDt);
-    else if(this.session.mode==='story'&&this.session.distance>=2220&&['playing','paused','falling','gameover'].includes(this.state)){this.finale??=new StoryFinale(this);this.finale.preview(this.session.distance);}
-    this.contactShadow.position.set(this.player.root.position.x,ending?this.player.root.position.y+.025:.025,this.player.root.position.z);this.contactShadow.material.opacity=.5/(1+this.motion.y);this.contactShadow.scale.setScalar(1+this.motion.y*.2);
+    const fogState=this.state==='paused'?this.resumeState:this.state;
+    document.querySelector('#arrival-fog').style.opacity=arrivalFogOpacity(this.session.mode,fogState,this.session.distance,this.finale?.elapsed??0);
+    this.contactShadow.position.set(this.player.root.position.x,ending?this.player.root.position.y+.025:elevation+.025,this.player.root.position.z);this.contactShadow.material.opacity=.5/(1+this.motion.y);this.contactShadow.scale.setScalar(1+this.motion.y*.2);
+    this.contactShadow.visible=!(this.fallCause==='chasm'&&['falling','gameover'].includes(this.state));
     this.ui.update(this.session);
     this.render();
   }

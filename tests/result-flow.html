@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8"><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+const result=document.querySelector('#result'),frame=document.querySelector('#frame');let players,id;
+try{
+ for(let i=0;i<200&&!frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE');i++)await new Promise(r=>setTimeout(r,100));
+ const doc=frame.contentDocument,ready=new Promise(resolve=>doc.addEventListener('flow-ready',e=>resolve(e.detail),{once:true})),script=doc.createElement('script');script.type='module';script.textContent="import {game,players} from './src/main.js';document.dispatchEvent(new CustomEvent('flow-ready',{detail:{game,players}}));";doc.body.append(script);
+ const state=await ready,game=state.game;players=state.players;await players.ready;game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);
+ doc.querySelector('#play').click();if(game.state!=='starting'||players.dialog.open)throw Error('Início não foi direto');
+ game.setState('playing');game.session.distance=123;game.crash();game.setState('gameover');if(!doc.querySelector('#result-dialog').open||players.pendingResult.distance!==123)throw Error('Resultado não apresentado');
+ const runId=players.pendingResult.id;doc.querySelector('#result-name').value='QA '+crypto.randomUUID().slice(0,8);await players.saveResult();
+ if(players.pendingResult||doc.querySelector('#result-dialog').open)throw Error('Salvamento local falhou');
+ const localRuns=await players.local.all('runs'),run=localRuns.find(r=>r.id===runId);if(!run)throw Error('Partida local ausente');id=run.playerId;
+ while(players.flushing)await new Promise(r=>setTimeout(r,50));await players.flush();while(players.flushing)await new Promise(r=>setTimeout(r,50));
+ const profile=await players.api('/api/players/'+id);if(!profile.history.some(r=>r.id===run.id))throw Error('Partida ausente no MySQL');
+ game.setState('menu');game.beginRun();game.setState('playing');game.session.distance=124;game.crash();game.setState('gameover');const skippedId=players.pendingResult.id;
+ doc.querySelector('#result-skip').click();if(doc.querySelector('#result-dialog').open||players.pendingResult||await players.local.get('runs',skippedId))throw Error('Fechar sem salvar falhou');
+ game.setState('menu');doc.querySelector('#ranking-open').click();await players.publicRanking();if(!doc.querySelector('#ranking-dialog').open||doc.querySelector('#public-ranking').textContent.includes('indisponível'))throw Error('Ranking indisponível');doc.querySelector('#ranking-close').click();
+ game.chooseMode('story');game.settings.credits=true;game.startRun();game.startEnding();game.finale.seek(35);
+ if(doc.querySelector('#result-dialog').open)throw Error('Resultado apareceu antes dos créditos');
+ game.finale.creditElapsed=8.98;game.finale.advance(.01);if(doc.querySelector('#result-dialog').open)throw Error('Resultado cobriu os créditos');
+ game.finale.advance(.02);if(!doc.querySelector('#result-dialog').open)throw Error('Resultado não apareceu depois dos créditos');doc.querySelector('#result-skip').click();
+ game.setState('menu');game.settings.credits=false;game.startRun();game.startEnding();game.finale.seek(35);if(!doc.querySelector('#result-dialog').open)throw Error('Resultado ausente com créditos desativados');doc.querySelector('#result-skip').click();
+ result.textContent='PASS início direto\nPASS nome após partida\nPASS resultado salvo no MySQL\nPASS fechar sem salvar\nPASS ranking carregado\nPASS resultado após os créditos\nPASS créditos desativados\nALL PASS';
+}catch(e){result.textContent='FAIL '+e.stack;}
+finally{if(players&&id){try{await players.api('/api/players/'+id,{method:'DELETE'});const runs=await players.local.all('runs');await players.local.write([{store:'profiles',delete:true,id},...runs.filter(r=>r.playerId===id).map(r=>({store:'runs',delete:true,id:r.id}))]);}catch(e){result.textContent+='\nFAIL limpeza '+e.message;}}}
+</script>

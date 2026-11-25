@@ -4,6 +4,7 @@ import { buildCampus, entranceState } from './Campus.js';
 import { batchMeshes } from '../utils/batchMeshes.js';
 import { createPlasmaProject } from './PlasmaProject.js';
 import { awardCamera } from './AwardCamera.js';
+import { CREDITS_DURATION } from './Credits.js';
 
 export const ENDING_DURATION=35;
 export const CREDITS_START=34.8;
@@ -71,6 +72,16 @@ export class StoryFinale{
       const label=this.text(platform,place.rank,place.x,.36+place.height*.66,-188.56,.85,.62,sign(place.rank,'#fff7d5','#253642',192,144));label.userData.rank=place.rank;this.rankSigns.push(label);
     }
     for(const side of [-1,1])for(let n=0;n<4;n++){this.box(g,this.dark,side*9,1,-174-n*3,4,1.7,.7);}
+    // A seated audience faces the stage, leaving the central aisle open.
+    const headGeometry=new THREE.SphereGeometry(.22,10,8),skin=[0xc99370,0x8c604b,0xdec0a0,0x715044].map(color=>new THREE.MeshStandardMaterial({color,roughness:.95}));
+    const clothes=[0x334d61,0x665a55,0x435746,0x555168].map(color=>new THREE.MeshStandardMaterial({color,roughness:1}));
+    for(const side of [-1,1])for(let row=0;row<4;row++)for(let seat=0;seat<4;seat++){
+      const x=side*(7.55+seat*.95),z=-174-row*3,i=(row*5+seat+(side>0?2:0))%4;
+      this.box(g,clothes[i],x,2.08,z,.53,.75,.4);
+      const head=new THREE.Mesh(headGeometry,skin[(i+row)%4]);head.position.set(x,2.65,z-.02);g.add(head);
+      for(const arm of [-1,1])this.box(g,clothes[i],x+arm*.33,2.08,z,.13,.65,.16);
+      for(const leg of [-1,1])this.box(g,this.dark,x+leg*.15,1.64,z-.28,.16,.2,.56);
+    }
     for(const side of [-1,1]){const light=new THREE.PointLight(0xffc879,75,20,2);light.position.set(side*6,7,-188);g.add(light);}
   }
   makeTrophy(){
@@ -79,11 +90,12 @@ export class StoryFinale{
     for(const side of [-1,1]){const handle=new THREE.Mesh(new THREE.TorusGeometry(.12,.02,6,14),this.gold);handle.position.set(side*.18,.38,0);g.add(handle);}g.visible=false;return g;
   }
   start(){
-    this.creditElapsed=-CREDITS_START;this.creditsManual=false;this.soundCues=new Set();
+    this.creditElapsed=-CREDITS_START;this.creditsManual=false;this.creditsFinished=false;this.soundCues=new Set();
+    this.game.camera.far=420;this.game.camera.updateProjectionMatrix();
     this.elapsed=0;this.done=false;this.cheered=false;this.root.visible=true;this.root.position.set(0,0,0);
     this.initialFog=this.game.scene.fog.color.clone();this.initialFogDensity=this.game.scene.fog.density;this.startCamera=this.game.camera.position.clone();this.startTarget=this.game.target.clone();this.arrivalSpeed=this.game.session.speed;this.startX=this.game.motion.x;this.startY=this.game.motion.y;this.game.player.resetPose();this.game.track.reset();this.game.passages.reset();this.game.motion.reset();this.trophy.visible=false;
   }
-  reset(){this.root.visible=false;this.trophy.visible=false;this.elapsed=0;this.done=false;this.game.world.segments.forEach(s=>{s.visible=true;for(const [node,visible] of s.userData.approachHidden??[])node.visible=visible;delete s.userData.approachHidden;});}
+  reset(){this.root.visible=false;this.trophy.visible=false;this.elapsed=0;this.done=false;this.game.camera.far=180;this.game.camera.updateProjectionMatrix();this.game.world.segments.forEach(s=>{s.visible=true;for(const [node,visible] of s.userData.approachHidden??[])node.visible=visible;delete s.userData.approachHidden;});}
   preview(distance){
     this.root.visible=true;this.campus.visible=true;this.hall.visible=true;this.auditorium.visible=false;this.others.forEach(bot=>bot.root.visible=false);this.trophy.visible=false;
     this.root.position.z=distance-2400;this.updateEntrance(105-this.root.position.z);
@@ -122,12 +134,15 @@ export class StoryFinale{
     const after=arrivalTravel(this.elapsed,this.arrivalSpeed);
     if(after>before&&dt>0)this.game.world.update(dt,(after-before)/dt,2400+after);
     if(this.elapsed>=ENDING_DURATION&&!this.done){this.done=true;this.game.setState('victory');}
+    if(this.done&&!this.creditsFinished&&(!this.game.settings.credits||this.creditElapsed>=CREDITS_DURATION)){
+      this.creditsFinished=true;this.game.events.dispatchEvent(new CustomEvent('creditsfinished'));
+    }
   }
   present(dt){
     const g=this.game,t=this.elapsed,travel=arrivalTravel(t,this.arrivalSpeed),phase=endingPhase(t);this.phase=phase;
     g.audio.setCeremonyDucking(t);
     this.campus.visible=true;this.hall.visible=true;this.auditorium.visible=true;this.others.forEach(bot=>bot.root.visible=true);
-    this.root.position.z=travel;g.world.root.visible=t<11;this.trimStreet();this.updateEntrance(105-travel);
+    this.root.position.z=travel;g.world.root.visible=false;this.updateEntrance(105-travel);
     const warm=THREE.MathUtils.smoothstep(t,0,6);g.scene.fog.color.copy(this.initialFog).lerp(new THREE.Color(0xadb9bd),warm);g.scene.fog.density=THREE.MathUtils.lerp(this.initialFogDensity??.004,.003,warm);g.atmosphere.update(780);this.daylight(1);
     const walk=podiumWalk(t,this.arrivalSpeed);
     g.player.root.rotation.y=walk.rotation;

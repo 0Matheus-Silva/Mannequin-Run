@@ -1,6 +1,7 @@
 import { SECTORS } from '../environments/Sectors.js';
 import { MUSIC_TRACKS } from '../audio/MusicLibrary.js';
 import { STORY_CHAPTERS } from '../game/Chapters.js';
+import { CREDITS_DURATION } from '../story/Credits.js';
 
 export class UI {
   constructor() {
@@ -16,6 +17,8 @@ export class UI {
       this.game?.resizeView();
     };
     addEventListener('resize', this.resize);
+    addEventListener('orientationchange', () => setTimeout(this.resize, 150));
+    window.visualViewport?.addEventListener('resize', this.resize);
     this.resize();
     this.nodes = Object.fromEntries(['menu','specimen','hud','pause-panel','over-panel','score','distance','items','best','menu-best','final-score','final-distance','final-items','final-best','storage-note'].map(id => [id, document.getElementById(id)]));
     this.lastHud = '';
@@ -23,13 +26,22 @@ export class UI {
     document.querySelector('#help-close').onclick = () => document.querySelector('#help').close();
     document.querySelector('#fullscreen').onclick = async () => {
       try {
-        if (document.fullscreenElement) await document.exitFullscreen();
-        else await document.querySelector('#viewport').requestFullscreen();
-      } catch { this.status('TELA CHEIA INDISPONÍVEL NESTE NAVEGADOR'); }
+        const viewport = document.querySelector('#viewport');
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          await (document.exitFullscreen?.() ?? document.webkitExitFullscreen?.());
+        } else {
+          const request = viewport.requestFullscreen || viewport.webkitRequestFullscreen;
+          if (!request) throw new Error('fullscreen unavailable');
+          await request.call(viewport);
+        }
+        this.resize();
+      } catch { this.status('TELA CHEIA INDISPONÍVEL. NO IPHONE, USE ADICIONAR À TELA DE INÍCIO.'); }
     };
     document.addEventListener('fullscreenchange', () => {
-      document.querySelector('#fullscreen').textContent = document.fullscreenElement ? '⛶ SAIR DA TELA CHEIA' : '⛶ TELA CHEIA';
+      document.querySelector('#fullscreen').textContent = (document.fullscreenElement || document.webkitFullscreenElement) ? '⛶ SAIR DA TELA CHEIA' : '⛶ TELA CHEIA';
+      this.resize();
     });
+    document.addEventListener('webkitfullscreenchange', this.resize);
   }
 
   bind(game) {
@@ -140,7 +152,7 @@ export class UI {
     document.querySelector('#ending-caption').textContent={arrival:'Um lugar para voltar. UniFECAF.',interior:'Toda jornada deixa uma história.',podium:'EXPOTECH 2026 · Um encontro de criadores.',trophy:'Primeiro lugar. A máquina que continuou.',victory:''}[phase];
   }
   credits(time,enabled){
-    const visible=enabled&&time>=0&&time<9;
+    const visible=enabled&&time>=0&&time<CREDITS_DURATION;
     document.querySelector('#credits-roll').hidden=!visible;
     if(visible)document.querySelector('#credits-content').style.transform='translateY('+(620-time*140)+'px)';
   }

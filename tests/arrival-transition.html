@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+const out=document.querySelector('#result'),frame=document.querySelector('#frame');
+try{
+ for(let i=0;i<200&&!frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE');i++)await new Promise(r=>setTimeout(r,100));
+ const doc=frame.contentDocument,ready=new Promise(resolve=>doc.addEventListener('arrival-test',e=>resolve(e.detail),{once:true})),script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('arrival-test',{detail:game}));";doc.body.append(script);const game=await ready;
+ game.renderer.setAnimationLoop(null);game.clock.getDelta=()=>0;game.audio.setEnabled(false);game.chooseMode('story');game.startRun();game.track.reset();game.session.distance=2360;game.world.applyPalette(2360);game.update();
+ if(game.world.activeSector!==3||game.finale?.root.visible)throw Error('Zona contaminada mudou antes da transição');
+ const first=Number(doc.querySelector('#arrival-fog').style.opacity);if(!(first>0&&first<.98))throw Error('Neblina não surgiu gradualmente');
+ game.session.distance=2399;game.track.reset();game.update();if(Number(doc.querySelector('#arrival-fog').style.opacity)<.95)throw Error('Neblina não cobre a troca');
+ const before=game.session.distance;game.advance(.1);if(game.state!=='ending'||before>=2400)throw Error('Chegada não iniciou');game.update();if(game.world.root.visible||!game.finale.root.visible)throw Error('Troca dos ambientes falhou');
+ game.finale.advance(3);game.update();if(Number(doc.querySelector('#arrival-fog').style.opacity)>.01||game.finale.root.position.z<=0)throw Error('Neblina não saiu ou corredor não avançou');
+ game.settings.credits=true;game.finale.seek(35);if(doc.querySelector('#result-dialog').open)throw Error('Resultado apareceu antes dos créditos');game.finale.advance(9);if(!doc.querySelector('#result-dialog').open)throw Error('Resultado ausente após os créditos');doc.querySelector('#result-skip').click();
+ out.textContent='PASS zona 4 preservada\nPASS neblina cobre a troca\nPASS chegada continua em movimento\nPASS resultado após créditos\nALL PASS';
+}catch(e){out.textContent='FAIL '+e.stack;}
+</script>

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { getPatina } from '../graphics/Patina.js';
+import { buildCityCar } from '../environments/CityCar.js';
 
 export function entranceState(remaining){return THREE.MathUtils.smoothstep(45-remaining,0,30);}
 
@@ -68,6 +69,18 @@ export function buildCampus(f){
     box(asphalt,side*24,-.08,z,10,.08,18);
     for(let j=0;j<5;j++)box(stucco,side*24+j*.9,.001,z, .05,.015,4);
   }
+  // Background towers frame the campus while leaving the entrance visible.
+  for(const side of [-1,1])for(let n=0;n<4;n++){
+    const x=side*(42+n*14),z=-130-(n%2)*26,h=21+n%3*8;
+    box(n%2?concrete:stucco,x,h/2,z,10,h,10);
+    for(let row=0;row<Math.floor(h/3);row++)for(let col=0;col<3;col++)box(glass,x+(col-1)*2.5,2+row*2.7,z+5.05,1.4,1.45,.08);
+    box(frame,x,h+.1,z,10.3,.2,10.3);
+  }
+  const carMaterials={carAsh:mat(0x777a76,.7,.3),carLight:mat(0xbbb9af,.7,.25),carCharcoal:mat(0x343b3e,.7,.3),carRed:mat(0x963e36,.65,.25),carBlue:mat(0x596f78,.65,.3),carRust:mat(0x735c4a),tire:mat(0x1d2221),hub:mat(0x929b9a,.4,.6),carGlass:mat(0x284149,.25,.45),lamp:mat(0xd7d0b5),tail:mat(0x8a3430)};
+  carMaterials.carGlass.side=THREE.DoubleSide;
+  for(const side of [-1,1])for(let n=0;n<4;n++){
+    const car=buildCityCar(f,carMaterials,n+(side>0?2:0),side,()=>.5);car.position.set(side*11,.05,17-n*20);g.add(car);
+  }
   for(const side of [-1,1])for(let z=-25;z>-100;z-=25){f.round(g,frame,side*8,2.6,z,.055,5.2);box(stucco,side*7.7,5.2,z,.8,.13,.4);}
   // Sliding glass doors are attached to the entrance frame, not to a detached gate.
   f.entryDoors=[-1,1].map(side=>{
@@ -90,9 +103,15 @@ export function buildCampus(f){
   f.groundSurfaces.hall=f.box(f.hall,concrete,0,-.2,-135,15,.4,65);
   for(const x of [-7.5,7.5]){
     f.box(f.hall,stucco,x,3.5,-135,.3,7,65);
-    for(let z=-111;z>-165;z-=8){f.box(f.hall,frame,x*.98,1.1,z,.08,.08,5);f.box(f.hall,f.blue,x*.98,3,z,.04,.3,4);}
+    for(let z=-111;z>-165;z-=8){
+      f.box(f.hall,frame,x*.98,1.1,z,.08,.08,5);f.box(f.hall,f.blue,x*.98,3,z,.04,.3,4);
+      f.box(f.hall,concrete,x*.96,3.3,z,.15,6.6,.3);f.box(f.hall,glass,x*.97,3.1,z-2,.04,2.5,2.7);
+      f.box(f.hall,frame,x*.95,3.1,z-2,.08,.07,2.7);
+    }
   }
   f.box(f.hall,stucco,0,7,-135,15,.25,65);
   for(let z=-110;z>-166;z-=10)f.box(f.hall,f.white,0,6.8,z,3,.05,.6);
+  for(const x of [-4.5,4.5])f.box(f.hall,frame,x,.012,-135,.06,.025,64);
+  for(let z=-105;z>-166;z-=5)f.box(f.hall,frame,0,.013,z,14.5,.02,.035);
   f.text(f.hall,'EXPOTECH 2026',0,5,-160,7,1.2);
 }

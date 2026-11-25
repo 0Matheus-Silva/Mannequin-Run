@@ -50,7 +50,8 @@ def live_setup(root=ROOT):
         "model": "models/" + MODEL,
         "generationConfig": {"responseModalities": ["AUDIO"], "speechConfig": {
             "voiceConfig": {"prebuiltVoiceConfig": {"voiceName": VOICE}}}},
-        "systemInstruction": {"parts": [{"text": personality["instruction"] + "\nBASE OFICIAL:\n" + json.dumps(facts, ensure_ascii=False)}]},
+        "systemInstruction": {"parts": [{"text": personality["instruction"] + "\nPara pedidos explícitos de música use controlar_apple_music. Só diga que tocou se a ferramenta confirmar. Se falhar, explique o erro e peça para conectar o reprodutor.\nBASE OFICIAL:\n" + json.dumps(facts, ensure_ascii=False)}]},
+        "tools": [{"functionDeclarations": [{"name": "controlar_apple_music", "description": "Controla o Apple Music apenas quando o visitante pedir música ou controle de reprodução.", "parameters": {"type": "OBJECT", "properties": {"acao": {"type": "STRING", "enum": ["play", "pause", "resume", "next", "previous"]}, "busca": {"type": "STRING", "description": "Nome da música e artista; obrigatório ao tocar uma música."}}, "required": ["acao"]}}]}],
         "inputAudioTranscription": {}, "outputAudioTranscription": {},
     }
 

@@ -2,7 +2,7 @@ import { LIVE_ENDPOINT, ASSISTANT_CONFIG } from './Config.js';
 export const pcmBase64=pcm=>{const bytes=new Uint8Array(pcm.length*2),view=new DataView(bytes.buffer);for(let i=0;i<pcm.length;i++)view.setInt16(i*2,pcm[i],true);let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary);};
 export function providerError(code){return ({429:'Cota indisponível. A conexão foi encerrada, sem troca automática para serviço pago.',403:'Integração bloqueada. A equipe precisa revisar público, termos e configuração.',503:'API não configurada ou indisponível. A demonstração local continua disponível.',1008:'Sessão recusada pelo provedor. Verifique configuração e cota antes de tentar novamente.'})[code]??'Conexão interrompida. O microfone foi desligado. Reconecte manualmente ou use a demonstração local.';}
 export class GeminiProvider{
-  constructor(emit,{fetcher=(...args)=>globalThis.fetch(...args),Socket=WebSocket}={}){this.emit=emit;this.fetcher=fetcher;this.Socket=Socket;this.kind='live';this.closed=false;this.serial=Promise.resolve();}
+  constructor(emit,{fetcher=(...args)=>globalThis.fetch(...args),Socket=WebSocket,toolHandler}={}){this.emit=emit;this.fetcher=fetcher;this.Socket=Socket;this.toolHandler=toolHandler;this.kind='live';this.closed=false;this.serial=Promise.resolve();}
   async connect(){
     const configResponse=await this.fetcher('/api/assistant/config',{cache:'no-store'});if(!configResponse.ok)throw Error(providerError(503));const config=await configResponse.json();if(!config.ready)throw Error(config.reason??providerError(403));
     const response=await this.fetcher('/api/assistant/token',{method:'POST',headers:{'Content-Type':'application/json','X-Assistant-CSRF':config.csrf},body:'{}',signal:AbortSignal.timeout(15000)});
@@ -16,17 +16,18 @@ export class GeminiProvider{
         let message;try{message=JSON.parse(typeof event.data==='string'?event.data:await event.data.text());}
         catch{this.emit({type:'error',text:'Resposta inválida do provedor.'});this.close();return;}
         if(message.setupComplete){clearTimeout(timer);resolve();}
-        try{this.handle(message);}catch{this.emit({type:'error',text:'Não foi possível reproduzir o áudio recebido. Interrompa a fala e reconecte.'});this.close();}
+        try{await this.handle(message);}catch{this.emit({type:'error',text:'Não foi possível processar a resposta recebida. Interrompa a fala e reconecte.'});this.close();}
       });};
       socket.onerror=()=>{clearTimeout(timer);reject(Error(providerError(503)));};
       socket.onclose=event=>{clearTimeout(timer);reject(Error(providerError(event.code)));if(!this.closed)this.emit({type:'error',text:providerError(event.code)});};
     });
     this.timer=setTimeout(()=>{this.emit({type:'error',text:'Limite local de três minutos atingido. Inicie outra sessão manualmente.'});this.close();},ASSISTANT_CONFIG.maxSessionSeconds*1000);
   }
-  handle(message){
+  async handle(message){
     if(this.closed)return;
     if(message.error){this.emit({type:'error',text:providerError(message.error.code)});this.close();return;}
     if(message.goAway){this.emit({type:'error',text:'O provedor vai encerrar a conexão. Reconecte manualmente; o histórico não é reenviado.'});this.close();return;}
+    if(message.toolCall?.functionCalls){const functionResponses=[];for(const call of message.toolCall.functionCalls){let response;try{if(!this.toolHandler)throw Error('Reprodutor indisponível.');response={result:await this.toolHandler(call.name,call.args||{})};}catch(error){response={error:error.message||'Não foi possível executar o comando.'};}functionResponses.push({id:call.id,name:call.name,response});}this.send({toolResponse:{functionResponses}});}
     const content=message.serverContent;if(!content)return;
     if(content.interrupted)this.emit({type:'interrupt'});
     if(content.inputTranscription?.text)this.emit({type:'transcript',role:'user',text:content.inputTranscription.text});

@@ -3,6 +3,7 @@ export const OBSTACLES = {
   jump: { width: 1.8, depth: 1, bottom: 0, top: .78 },
   slide: { width: 1.9, depth: 1, bottom: 1.18, top: 2.9 },
 };
+export const fatalCollision=(type,time,lastStumble)=>type!=='jump'||time-lastStumble<3;
 
 // Swept longitudinal bounds prevent tunneling at high speed or low frame rate.
 export function overlapsPlayer(player, obstacle, previousZ, z) {
@@ -39,3 +40,5 @@ export function createPattern(index, random = Math.random) {
   }else collectibles=[-5,-2,1].map(z=>({lane:safeLane,z,y:1.25,action:'free'}));
   return {safeLane,obstacles,route,collectibles};
 }
+
+export function createSectorPattern(index,sector,random=Math.random){return createPattern(index,random);}

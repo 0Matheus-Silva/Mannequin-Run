@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { LANE_WIDTH } from '../player/PlayerController.js';
-import { canCollect, createPattern, overlapsPlayer } from './Collision.js';
+import { canCollect, createSectorPattern, overlapsPlayer } from './Collision.js';
 import { batchMeshes } from '../utils/batchMeshes.js';
 import { armorGeometry } from '../graphics/Geometry.js';
 import { getSurfaces } from '../graphics/SurfaceLibrary.js';
@@ -81,7 +81,7 @@ export class TrackObjects {
   spawn(sector=0) {
     const row = this.rows.find(row => !row.active);
     if (!row) return;
-    const pattern = createPattern(this.index++);
+    const pattern = createSectorPattern(this.index++,sector);
     if(!row.themeSlots[sector])row.themeSlots[sector]=[-1,0,1].map(lane=>{const variants={};for(const type of ['block','jump','slide']){const model=this.obstacle(type,sector);model.position.x=lane*LANE_WIDTH;row.group.add(model);variants[type]=model;}return variants;});
     for(const slots of Object.values(row.themeSlots))for (const slot of slots) for (const mesh of Object.values(slot)) mesh.visible = false;
     row.obstacles = pattern.obstacles.map(obstacle => ({ ...obstacle, x: obstacle.lane * LANE_WIDTH }));
@@ -92,16 +92,17 @@ export class TrackObjects {
     row.group.position.z = -85; row.group.visible = true; row.active = true;
   }
 
-  update(dt, speed, player, elapsed,distance=0) {
+  update(dt, speed, player, elapsed,distance=0,chasmNear=()=>false,elevationAt=()=>0) {
     this.timer -= dt;
-    if (this.timer <= 0) { this.spawn(sectorAt(distance+85)); this.timer += 1.65 + (this.index < 4 ? .45 : 0); }
+    if (this.timer <= 0) { if(!chasmNear(-85))this.spawn(sectorAt(distance+85)); this.timer += 1.65 + (this.index < 4 ? .45 : 0); }
     for (const row of this.rows) {
       if (!row.active) continue;
       const previousZ = row.group.position.z;
       row.group.position.z += speed * dt;
       const z = row.group.position.z;
+      row.group.position.y=elevationAt(distance-z);
       for (const obstacle of row.obstacles) {
-        if (overlapsPlayer(player, obstacle, previousZ, z)) { this.onCrash(); return; }
+        if (!obstacle.hit&&overlapsPlayer(player, obstacle, previousZ, z)) { obstacle.hit=true;if(this.onCrash(obstacle.type))return; }
       }
       for (let i=0;i<row.chips.length;i++) {
         const chip = row.chips[i];

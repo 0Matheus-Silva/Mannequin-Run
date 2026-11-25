@@ -2,8 +2,8 @@ import { AssistantSession } from './Session.js';
 import { ASSISTANT_CONFIG } from './Config.js';
 const labels={idle:'AGUARDANDO VISITANTE',connecting:'CONECTANDO',ready:'PODE PERGUNTAR',permission:'PERMISSÃO DO MICROFONE',listening:'MICROFONE ATIVO',thinking:'PENSANDO',speaking:'FALANDO',error:'CONEXÃO INDISPONÍVEL'};
 export class AssistantUI{
-  constructor(){
-    this.panel=document.querySelector('#assistant-panel');this.list=document.querySelector('#assistant-history');this.session=new AssistantSession(this);this.bind();this.status('idle');
+  constructor(music=null){
+    this.panel=document.querySelector('#assistant-panel');this.list=document.querySelector('#assistant-history');this.session=new AssistantSession(this,{music});this.bind();this.status('idle');
     addEventListener('pagehide',()=>this.session.dispose());document.addEventListener('visibilitychange',()=>{if(document.hidden){this.session.microphone.stop();this.session.provider?.endAudio?.();this.session.interrupt();this.mic(false);}});
   }
   bind(){

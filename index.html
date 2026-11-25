@@ -2,8 +2,11 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#060c12">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Nexus Run">
   <title>NEXUS RUN</title>
   <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="./styles/assistant.css">
@@ -15,6 +18,7 @@
   <main id="viewport" aria-label="Nexus Run — jogo 3D">
     <div id="stage">
       <canvas id="scene" aria-label="Laboratório abandonado e manequim tecnológico"></canvas>
+      <div id="arrival-fog" aria-hidden="true"></div>
       <div class="vignette" aria-hidden="true"></div>
       <header class="topline"><span><i></i> NXS / DIVISÃO DE PESQUISA</span><span id="sector-label">SETOR 01 — LABORATÓRIO ABANDONADO</span></header>
       <section id="menu" class="menu">
@@ -23,11 +27,11 @@
         <p class="intro">O laboratório caiu.<br>Você acabou de despertar.</p>
         <div class="mode-select" role="group" aria-label="Modo de jogo"><button data-mode="story" aria-pressed="false">MODO HISTÓRIA</button><button data-mode="infinite" aria-pressed="true">MODO INFINITO</button></div>
         <p id="mode-description">Corrida sem fim. Quatro ambientes. Um novo recorde.</p>
-        <button id="play" class="primary">INICIAR <span>↗</span></button>
+        <button id="play" class="primary">INICIAR <span>↗</span></button><button id="ranking-open" class="secondary">RANKING</button>
         <div class="menu-tools"><button id="help-open" class="secondary">COMO JOGAR <span>+</span></button><button id="chapters-open" class="secondary">CAPÍTULOS <span>↗</span></button></div>
         <div class="build-label"><span>RECORDE PESSOAL</span> <b id="menu-best">0</b></div>
-        <div class="menu-tools profile-tools"><button id="profiles-open" class="secondary">JOGADORES / RANKING</button><button id="gamepad-open" class="secondary">TESTAR CONTROLE</button></div>
-        <p id="profile-name">Nenhum jogador selecionado</p><p id="profile-status" role="status"></p>
+        <div class="menu-tools profile-tools"><button id="profiles-open" class="secondary" hidden>JOGADORES / RANKING</button><button id="gamepad-open" class="secondary">TESTAR CONTROLE</button></div>
+        <p id="profile-name" hidden></p><p id="profile-status" role="status"></p>
       </section>
       <aside class="specimen" id="specimen"><span>UNIDADE 001</span><strong>NEXUS</strong><small>ESTRUTURA SINTÉTICA / NÚCLEO ATIVO</small><div class="specimen-line"></div></aside>
       <section id="hud" hidden aria-label="Dados da partida">
@@ -50,6 +54,7 @@
       <section id="credits-roll" hidden aria-label="Créditos da equipe"><div id="credits-content"><h2>CDC2NA</h2><p>Fabiano Matheus de Camargo Silva</p><p>Pedro Henrique Freitas de Oliveira</p><p>Vitor Barioni Ferraz</p><small>NEXUS RUN · EXPOTECH 2026</small></div></section>
       <div id="sector-toast" aria-live="polite"><p id="sector-number"></p><h2 id="sector-name"></h2><small id="sector-subtitle"></small></div>
       <div id="hit-flash" aria-hidden="true"></div>
+      <section id="music-controls" aria-label="Apple Music"><button id="music-open">♫ APPLE MUSIC</button><button id="music-previous" aria-label="Música anterior">⏮</button><button id="music-play" aria-label="Continuar música">▶</button><button id="music-pause" aria-label="Pausar música">Ⅱ</button><button id="music-next" aria-label="Próxima música">⏭</button><span id="music-status" role="status">Reprodutor não conectado.</span></section>
       <button id="assistant-open" aria-expanded="false" aria-controls="assistant-panel">◈ CONVERSAR COM NEXUS</button>
       <aside id="assistant-panel" hidden aria-label="Converse com o Nexus" data-state="idle">
         <header class="assistant-heading"><svg class="assistant-avatar" viewBox="0 0 100 110" preserveAspectRatio="xMidYMid meet" aria-label="Personagem de frente, com capuz preto e máscara ciano de três filtros" role="img"><defs><linearGradient id="avatar-hood" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#26333c"/><stop offset="1" stop-color="#0b1118"/></linearGradient><radialGradient id="avatar-mask"><stop stop-color="#142430"/><stop offset="1" stop-color="#03090f"/></radialGradient></defs><path d="M7 107L10 48Q11 5 50 4Q89 5 90 48L93 107L74 101L69 87H31L26 101Z" fill="url(#avatar-hood)"/><path d="M22 83L20 47Q21 16 50 13Q79 16 80 47L78 83" fill="none" stroke="#3c4a54" stroke-width="2"/><ellipse cx="50" cy="54" rx="29" ry="37" fill="url(#avatar-mask)"/><g fill="#06121c" stroke="#5ae6ef" stroke-width="1.6" stroke-linejoin="round"><path d="M47 39L37 32L25 32L27 45L35 55L44 52Z"/><path d="M53 39L63 32L75 32L73 45L65 55L56 52Z"/><ellipse cx="24" cy="73" rx="10" ry="13"/><ellipse cx="76" cy="73" rx="10" ry="13"/><circle cx="50" cy="72" r="10"/></g><g stroke="#38505b" stroke-width="1.3"><path d="M18 69H30M18 73H30M18 77H30M70 69H82M70 73H82M70 77H82"/><path d="M45 69H55M45 72H55M45 75H55"/></g><path d="M30 94L24 106M70 94L76 106" stroke="#67727a" stroke-width="1.5"/></svg><div><small>UNIDADE CONVERSACIONAL</small><h2>NEXUS</h2><p>Capuz, circuitos e algumas boas perguntas.</p></div><button id="assistant-minimize" aria-label="Minimizar conversa">−</button></header>
@@ -68,7 +73,7 @@
         <p class="eyebrow">PROTOCOLO DE SOBREVIVÊNCIA</p><h2>Continue em movimento.</h2>
         <p>No celular, deslize o dedo na área do jogo: esquerda ou direita para trocar de faixa, para cima para pular e para baixo para deslizar. Cada gesto executa uma ação. Use o botão de pausa para parar a partida.</p>
         <div class="instructions"><p><kbd>A</kbd> <kbd>←</kbd> / <kbd>D</kbd> <kbd>→</kbd> Trocar de faixa</p><p><kbd>ESPAÇO</kbd> <kbd>↑</kbd> Saltar barreiras baixas amarelas</p><p><kbd>S</kbd> <kbd>↓</kbd> Deslizar sob vigas vermelhas</p><p><kbd>ESC</kbd> Pausar / continuar · <kbd>R</kbd> Reiniciar após colisão</p></div>
-        <p>Desvie dos obstáculos altos. Cada componente ciano vale 75 pontos. Siga os arcos de componentes saltando barreiras e as trilhas baixas deslizando sob estruturas. Outras trilhas indicam mudanças de faixa. Há sempre uma faixa livre: a coleta é opcional. A velocidade aumenta com a distância.</p>
+        <p>Desvie dos obstáculos altos e das crateras na cidade. No complexo industrial, entre na faixa central para subir à estrada elevada. Um tropeço em uma barreira baixa permite continuar; outra colisão nos próximos três segundos encerra a partida. Obstáculos de deslize, obstáculos altos e quedas são fatais. Cada componente ciano vale 75 pontos. A coleta é opcional e a velocidade aumenta com a distância.</p>
         <button id="help-close" class="primary">ENTENDIDO <span>↗</span></button>
       </dialog>
       <dialog id="settings" aria-labelledby="settings-title">
@@ -96,6 +101,8 @@
         <div class="profile-actions"><button id="players-export" class="secondary">EXPORTAR RESULTADOS</button><button id="player-end-session" class="secondary">PRÓXIMO VISITANTE</button><button id="player-delete" class="secondary" disabled>EXCLUIR PERFIL</button></div>
         <div class="profile-actions"><button id="player-guest" class="secondary">VISITANTE SEM SALVAR</button><button id="player-close" class="secondary" data-pad-back>VOLTAR</button></div>
       </dialog>
+      <dialog id="ranking-dialog" aria-labelledby="ranking-title"><p class="eyebrow">MELHORES RESULTADOS</p><h2 id="ranking-title">RANKING</h2><label for="public-ranking-mode">Resultados</label><select id="public-ranking-mode"><option value="all">Geral</option><option value="infinite">Modo Infinito</option><option value="story">Modo História</option></select><div id="public-ranking"></div><button id="ranking-close" class="secondary" data-pad-back>VOLTAR</button></dialog>
+      <dialog id="result-dialog" aria-labelledby="result-title"><form id="result-form"><p class="eyebrow">PARTIDA CONCLUÍDA</p><h2 id="result-title">Salve seu resultado</h2><p id="result-summary"></p><label for="result-name">Digite seu nome ou apelido</label><input id="result-name" maxlength="48" required autocomplete="nickname"><p id="result-status" role="status"></p><button id="result-save" class="primary" type="submit">SALVAR RESULTADO</button><button id="result-skip" class="secondary" type="button" data-pad-back>FECHAR SEM SALVAR</button></form></dialog>
       <dialog id="gamepad-dialog" aria-labelledby="gamepad-title"><p class="eyebrow">DIAGNÓSTICO DE ENTRADA</p><h2 id="gamepad-title">DUALSENSE / CONTROLE</h2><p>Analógico esquerdo ou direcional: faixas · X: salto / confirmar · Círculo: deslize / voltar · Options: pausa. Solte o comando entre ações.</p><pre id="gamepad-readings"></pre><p>Layout não padrão? Clique no comando abaixo, solte todos os botões e pressione o botão correspondente. Para o eixo, mova o analógico esquerdo horizontalmente. Calibração fica apenas neste navegador.</p><div class="profile-actions"><button data-calibrate="cross">X</button><button data-calibrate="circle">CÍRCULO</button><button data-calibrate="options">OPTIONS</button><button data-calibrate="axis">EIXO HORIZONTAL</button><button data-calibrate="left">←</button><button data-calibrate="right">→</button><button data-calibrate="up">↑</button><button data-calibrate="down">↓</button></div><button id="gamepad-close" class="primary" data-pad-back>VOLTAR</button></dialog>
       <section id="error" hidden role="alert"><h2>Não foi possível iniciar o 3D.</h2><p id="error-message"></p><p>Use um navegador atualizado com aceleração gráfica e abra o projeto pelo servidor local.</p></section>
     </div>

@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+const result=document.querySelector('#result'),frame=document.querySelector('#frame');
+try{
+ for(let i=0;i<200&&!frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE');i++)await new Promise(r=>setTimeout(r,100));
+ const doc=frame.contentDocument,ready=new Promise(resolve=>doc.addEventListener('chasm-ready',e=>resolve(e.detail),{once:true})),script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('chasm-ready',{detail:game}));";doc.body.append(script);
+ const game=await ready;game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);game.startRun();
+ if(game.hitObstacle('jump')||game.state!=='playing')throw Error('Primeiro tropeço deveria permitir continuar');
+ game.session.time+=2.99;if(!game.hitObstacle('jump')||game.state!=='falling')throw Error('Segundo tropeço deveria ser fatal');
+ game.startRun();game.hitObstacle('jump');game.session.time+=3;if(game.hitObstacle('jump')||game.state!=='playing')throw Error('Recuperação após 3 segundos falhou');
+ if(!game.hitObstacle('slide')||game.state!=='falling')throw Error('Colisão de deslize deveria ser fatal');
+ game.startRun();let segment=game.world.replace(2,1);segment.position.z=8;let next=game.world.replace(3,1);next.position.z=-8;game.motion.x=segment.userData.chasmSide*2.7;game.motion.lane=segment.userData.chasmSide;
+ game.motion.jump();game.motion.move(-segment.userData.chasmSide);game.advance(.9);if(game.state!=='playing'||Math.abs(game.motion.x)>1.35)throw Error('Salto para faixa segura deveria continuar');
+ game.startRun();segment=game.world.replace(2,1);segment.position.z=8;next=game.world.replace(3,1);next.position.z=-8;game.motion.x=segment.userData.chasmSide*2.7;game.motion.lane=segment.userData.chasmSide;game.motion.jump();game.advance(.95);if(game.state!=='falling'||game.fallCause!=='chasm')throw Error('Aterrissagem na cratera deveria causar queda');
+ game.startRun();segment=game.world.replace(2,1);segment.position.z=8;game.motion.x=segment.userData.chasmSide*2.7;game.motion.lane=segment.userData.chasmSide;
+ game.advance(1/120);if(game.state!=='falling'||game.fallCause!=='chasm')throw Error('Entrada na cratera deveria causar queda');
+ game.advance(.5);game.update();if(game.player.root.position.y>=0)throw Error('Personagem não caiu visualmente');
+ result.textContent='PASS tropeço e colisão repetida\nPASS recuperação em 3 segundos\nPASS deslize fatal\nPASS salto para faixa segura\nPASS aterrissagem na cratera\nPASS queda na cratera\nALL PASS';
+}catch(e){result.textContent='FAIL '+e.stack;}
+</script>
