@@ -114,4 +114,6 @@ export function buildCampus(f){
   for(const x of [-4.5,4.5])f.box(f.hall,frame,x,.012,-135,.06,.025,64);
   for(let z=-105;z>-166;z-=5)f.box(f.hall,frame,0,.013,z,14.5,.02,.035);
   f.text(f.hall,'EXPOTECH 2026',0,5,-160,7,1.2);
+  // Two hangers attach the entrance sign to the ceiling.
+  for(const x of [-3.15,3.15])f.box(f.hall,frame,x,6.22,-160,.09,1.32,.09);
 }

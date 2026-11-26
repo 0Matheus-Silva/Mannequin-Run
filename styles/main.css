@@ -63,7 +63,7 @@ dialog .primary { margin-top: 32px; }
 kbd { display:inline-block; border:1px solid #3c5e69; padding:2px 8px; border-radius:3px; font:16px Consolas,monospace; color:#62e4dd; }
 .instructions p { font-size:17px; }
 #storage-note { position:absolute; bottom:20px; width:100%; text-align:center; color:#e5bb88; font:12px Consolas,monospace; }
-#sector-toast { position:absolute; top:240px; width:100%; text-align:center; pointer-events:none; opacity:0; text-shadow:0 2px 15px #000; }
+#sector-toast { position:absolute; top:190px; width:100%; text-align:center; pointer-events:none; opacity:0; text-shadow:0 2px 15px #000; }
 #sector-toast p { color:#6ef2db; font:13px Consolas,monospace; letter-spacing:5px; }
 #sector-toast h2 { margin:16px 0; color:#efffff; font-size:44px; font-weight:400; letter-spacing:8px; }
 #sector-toast small { font:12px Consolas,monospace; letter-spacing:3px; color:#bfdbd7; }
@@ -116,7 +116,7 @@ kbd { display:inline-block; border:1px solid #3c5e69; padding:2px 8px; border-ra
 .setting-row input[type=range] { width:230px; accent-color:#62e4dd; }
 .setting-row select { width:230px; padding:10px 16px; background:#102630; border:1px solid #3a606b; color:#d6edec; font:inherit; }
 dialog .settings-note { font-size:16px; }
-.sector-track { position:absolute; left:80px; right:80px; top:205px; height:2px; background:#527a8033; }
+.sector-track { position:absolute; left:80px; right:80px; top:96px; height:2px; background:#527a8033; }
 #sector-progress { height:100%; background:#6ef2db; box-shadow:0 0 10px #6ef2db66; }
 #hit-flash { position:absolute; inset:0; background:radial-gradient(ellipse,transparent 35%,#fa564c88); opacity:0; pointer-events:none; }
 #hit-flash.show { animation:hit-flash .6s ease-out both; }

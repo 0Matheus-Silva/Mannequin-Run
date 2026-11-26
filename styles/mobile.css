@@ -32,7 +32,7 @@
 .mobile .hud-values small{font-size:8px;letter-spacing:0}.mobile .hud-values strong{font-size:17px;margin-top:4px}
 .mobile .hud-values>div:nth-child(n+4){display:none}
 .mobile #pause-button{top:42px;right:12px;padding:12px;min-width:44px;min-height:44px;font-size:11px}
-.mobile .sector-track{left:12px;right:12px;top:108px}
+.mobile .sector-track{left:12px;right:12px;top:35px}
 .mobile .control-hint{bottom:max(18px,env(safe-area-inset-bottom));font-size:10px;letter-spacing:0;pointer-events:none}
 .mobile .control-hint span{margin:0}.mobile .desktop-controls{display:none}.mobile .touch-controls{display:inline}
 .mobile #hud,.mobile .topline{pointer-events:none}.mobile #pause-button{pointer-events:auto}
@@ -49,7 +49,7 @@
 .mobile #assistant-panel button{min-height:44px}.mobile #assistant-provider{min-width:0;width:0;font-size:16px!important}
 .mobile #assistant-input{font-size:16px!important}.mobile #assistant-history{flex:1 0 100px;max-height:35dvh}
 .mobile #assistant-panel .assistant-heading p{display:none}.mobile #assistant-disclosure{font-size:10px}
-.mobile #sector-toast{top:140px;padding:0 16px}.mobile #sector-toast h2{font-size:25px;letter-spacing:2px}
+.mobile #sector-toast{top:105px;padding:0 16px}.mobile #sector-toast h2{font-size:25px;letter-spacing:2px}
 .mobile #sector-toast p,.mobile #sector-toast small{font-size:10px;letter-spacing:1px}
 .mobile #credits-roll{top:100px;height:65%}.mobile #credits-content{width:100%;padding:16px}
 .mobile #credits-content h2{font-size:32px}.mobile #credits-content p{font-size:20px}.mobile #credits-content small{font-size:12px}

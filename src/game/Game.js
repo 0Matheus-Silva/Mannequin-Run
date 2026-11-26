@@ -122,7 +122,7 @@ export class Game {
   }
 
   setQuality(quality) {
-    const levels={eco:{scale:.65,shadows:false},standard:{scale:1,shadows:true},high:{scale:Math.min(devicePixelRatio,1.5),shadows:true}};
+    const levels={eco:{scale:.65,shadows:false},standard:{scale:.85,shadows:true},high:{scale:Math.min(devicePixelRatio,1.5),shadows:true}};
     const level=levels[quality]??levels.standard;
     this.renderer.setPixelRatio(this.ui.mobile?Math.min(level.scale,1):level.scale);this.resizeView(false);
     this.renderer.shadowMap.enabled=level.shadows;
@@ -169,7 +169,7 @@ export class Game {
       this.world.applyPalette(chapter.distance);this.atmosphere.update(chapter.distance,'story');this.passages.update(chapter.distance,'story');
       this.sector=sectorAt(chapter.distance);this.ui.sector(this.sector,true);this.audio.setSector(this.sector,false);
       this.camera.position.set(0,3.8,7);this.target.set(0,1.4,-7);this.camera.lookAt(this.target);
-      const chapterVoice=chapter.id==='machines'?this.nextBridgeVoice():{city:'nexus-setor-2',industry:'nexus-setor-3',contamination:'nexus-setor-4',arrival:'nexus-premonicao'}[chapter.id];
+      const chapterVoice=chapter.id==='machines'?this.nextBridgeVoice():{city:'nexus-setor-2',industry:'nexus-setor-3',contamination:'nexus-setor-4'}[chapter.id];
       if(chapterVoice&&this.audio.enabled)void this.audio.unlock().then(ok=>{if(ok&&this.state==='playing'&&this.activeChapter===chapter.id)this.audio.queueNexusLine(chapterVoice);});
       if(chapter.endingTime!==undefined){this.startEnding();this.finale.seek(chapter.endingTime);}
       this.update();this.ui.status('TRECHO DO MODO HISTÓRIA / '+chapter.name);
@@ -184,13 +184,15 @@ export class Game {
 
   updateRescueNarrative(){
     if(this.session.mode!=='story'||!this.rescue.state.completed)return true;
-    const n=this.rescueNarrative??=( {started:this.session.time,stage:0} );
+    const n=this.rescueNarrative??={stage:0,queued:false,previousCount:this.audio.nexusHistory?.get('nexus-premonicao')?.count??0};
     const audio=this.audio,available=audio.enabled&&audio.context?.state==='running';
-    if(n.stage===0&&this.session.time-n.started>=4){if(!available||audio.nexusMayPlay?.('nexus-ponte-1')===false||audio.queueNexusLine('nexus-ponte-1'))n.stage=1;}
-    const ready=()=>!audio.nexusQueue?.length&&audio.context.currentTime>=(audio.nexusVoiceUntil??0)+1;
-    if(n.stage===1&&this.session.time-n.started>=8&&(!available||ready())){if(!available||audio.nexusMayPlay?.('nexus-premonicao')===false||audio.queueNexusLine('nexus-premonicao'))n.stage=2;}
-    if(n.stage===2&&this.session.time-n.started>=12&&(!available||(!audio.nexusQueue?.length&&audio.context.currentTime>=(audio.nexusVoiceUntil??0)-3)))n.stage=3;
-    return n.stage===3;
+    if(n.stage===0){
+      const missing=available&&audio.awardBuffers&&!audio.awardBuffers.has('nexus-premonicao');
+      if(available&&!missing&&!n.queued&&audio.nexusMayPlay?.('nexus-premonicao')!==false)n.queued=audio.queueNexusLine('nexus-premonicao');
+      const played=(audio.nexusHistory?.get('nexus-premonicao')?.count??0)>n.previousCount;
+      if(!available||missing||played||audio.nexusMayPlay?.('nexus-premonicao')===false&&!n.queued){n.stage=1;n.started=this.session.time;this.session.finalSectorComplete=true;}
+    }
+    return n.stage===1&&this.session.time-n.started>=2.4;
   }
 
   crash(cause='obstacle') {
@@ -202,6 +204,7 @@ export class Game {
   }
 
   hitObstacle(type){
+    if(this.session.mode==='story'&&this.rescue.state.completed)return false;
     if(fatalCollision(type,this.session.time,this.lastStumble??-Infinity)){this.crash();return true;}
     this.audio.playNexusCue('tropeco');this.lastStumble=this.session.time;this.ui.hit();this.effects.burst(this.motion.x,.5,0,true);this.audio.effect('crash');return false;
   }
@@ -247,7 +250,8 @@ export class Game {
       if(cycleBefore<1400&&cycleAfter>=1400)this.ui.status('ESTRADA ELEVADA À FRENTE');
       if(crossesEntrance(beforeDistance,this.session.distance))this.ui.status('ESTRADA ELEVADA · CONTINUE A CORRIDA');
       if(this.session.mode==='story'&&!this.session.practice)for(const distance of [600,1200,1800,2300,2400])if(beforeDistance<distance&&this.session.distance>=distance)this.events.dispatchEvent(new CustomEvent('checkpoint',{detail:{distance}}));
-      if(this.session.mode==='story'&&this.session.distance>=2990&&(!this.rescue.state.completed||!this.updateRescueNarrative())){this.session.distance=2990;if(!this.rescue.state.completed)this.ui.status('PEGUE COMPONENTES PARA AJUDAR O SERVIDOR');}
+      if(this.session.mode==='story'&&this.rescue.state.completed&&this.updateRescueNarrative()){this.startEnding();return;}
+      if(this.session.mode==='story'&&this.session.distance>=2990){this.session.distance=2990;if(!this.rescue.state.completed)this.ui.status('PEGUE COMPONENTES PARA AJUDAR O SERVIDOR');}
       if(storyComplete(this.session.mode,this.session.distance)){this.startEnding();return;}
       if(this.rescue.update(step,this.session.distance,this.session.mode))this.audio.effect('collect');
       if(this.rescue.state.completed)this.updateRescueNarrative();
@@ -314,7 +318,8 @@ export class Game {
       this.rescueVoicePlayed=true;const epoch=this.rescueVoiceEpoch;
       if(this.audio.context&&this.audio.enabled)setTimeout(()=>{if(this.state==='playing'&&this.rescueVoiceEpoch===epoch&&this.session.distance<2470)void this.audio.loadAwardSounds().then(()=>{if(this.state==='playing'&&this.rescueVoiceEpoch===epoch&&this.session.distance<2470)this.audio.queueNexusLine('nexus-servidor');});},650);
     }
-    document.querySelector('#arrival-fog').style.opacity=arrivalFogOpacity(this.session.mode,fogState,this.session.distance,this.finale?.elapsed??0,this.rescue.state.completed&&this.rescueNarrative?.stage===3);
+    const fogElapsed=this.rescueNarrative?.stage===1?this.session.time-this.rescueNarrative.started:null;
+    document.querySelector('#arrival-fog').style.opacity=arrivalFogOpacity(this.session.mode,fogState,this.session.distance,this.finale?.elapsed??0,fogElapsed);
     this.contactShadow.position.set(this.player.root.position.x,ending?this.player.root.position.y+.025:elevation+.025,this.player.root.position.z);this.contactShadow.material.opacity=.5/(1+this.motion.y);this.contactShadow.scale.setScalar(1+this.motion.y*.2);
     this.contactShadow.visible=!(this.fallCause==='chasm'&&['falling','gameover'].includes(this.state));
     this.ui.update(this.session);

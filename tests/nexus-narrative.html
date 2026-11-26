@@ -1,15 +1,15 @@
 <!doctype html><meta charset="utf-8"><pre id="result">RUNNING</pre><script type="importmap">{"imports":{"three":"../assets/vendor/three/three.module.js"}}</script><script type="module">
 import {Game} from '../src/game/Game.js';
 try {
- const lines=[],audio={enabled:true,context:{state:'running',currentTime:0},nexusQueue:[],nexusVoiceUntil:0,queueNexusLine(name){lines.push(name);this.nexusVoiceUntil=this.context.currentTime+5;return true;}};
+ const lines=[],audio={enabled:true,context:{state:'running',currentTime:0},nexusHistory:new Map(),nexusQueue:[],nexusVoiceUntil:0,queueNexusLine(name){lines.push(name);this.nexusQueue=[name];return true;}};
  const game={session:{mode:'story',time:0},rescue:{state:{completed:true}},audio,rescueNarrative:null};
  const tick=(t)=>{game.session.time=t;audio.context.currentTime=t;return Game.prototype.updateRescueNarrative.call(game);};
- if(tick(0)||tick(3.9)||lines.length)throw Error('A fala começou cedo demais');
- tick(4);if(lines.join()!=='nexus-ponte-1')throw Error('Fala da tábua ausente');
- tick(8);if(lines.length!==1)throw Error('Premonição começou antes da pausa');
- tick(10);if(lines.join()!=='nexus-ponte-1,nexus-premonicao')throw Error('Ordem das falas incorreta');
- if(tick(11.9))throw Error('Final liberado antes de concluir a fala');
- if(!tick(12))throw Error('Final não liberado após a fala');
- document.querySelector('#result').textContent='PASS sequência servidor, tábua e premonição\nALL PASS';
+ if(tick(0)||lines.join()!=='nexus-premonicao')throw Error('Premonição não foi solicitada imediatamente');
+ if(tick(1)||game.rescueNarrative.stage!==0)throw Error('Neblina começou antes da fala');
+ audio.nexusQueue=[];audio.nexusHistory.set('nexus-premonicao',{count:1});tick(2);
+ if(!game.session.finalSectorComplete||game.rescueNarrative.stage!==1)throw Error('Neblina ou barra não iniciaram junto da fala');
+ if(tick(4.39))throw Error('Final começou antes de fechar a neblina');
+ if(!tick(4.4))throw Error('Final não começou após fechar a neblina');
+ document.querySelector('#result').textContent='PASS premonição sincronizada com a neblina e a barra\nALL PASS';
 }catch(error){document.querySelector('#result').textContent='FAIL '+error.stack;}
 </script>

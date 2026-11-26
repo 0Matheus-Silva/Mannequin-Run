@@ -126,7 +126,7 @@ export class UI {
 
   update(session) {
     const values = [session.score, Math.floor(session.distance), session.items, session.records.best];
-    const key = values.join('|')+'|'+session.records.persistent;
+    const key = values.join('|')+'|'+session.records.persistent+'|'+session.finalSectorComplete;
     if (key === this.lastHud) return;
     this.lastHud = key;
     this.nodes.score.textContent = values[0].toLocaleString('pt-BR');
@@ -136,7 +136,7 @@ export class UI {
     this.nodes['menu-best'].textContent = values[3].toLocaleString('pt-BR');
     this.nodes['storage-note'].hidden = session.records.persistent;
     document.querySelector('#speed').textContent=(session.speed*3.6).toFixed(0)+' km/h';
-    document.querySelector('#sector-progress').style.width=(session.distance%600/600*100)+'%';
+    document.querySelector('#sector-progress').style.width=(session.mode==='story'&&session.finalSectorComplete?100:session.distance%600/600*100)+'%';
   }
 
   collect() {

@@ -18,6 +18,8 @@ const lines={
  'nexus-ponte-2':'Só não olha pra baixo. Eu olhei e não recomendo.',
  'nexus-servidor':'Segura firme, amigão, estamos trazendo suas peças!',
  'nexus-servidor-pecas':'Se isso não funcionar, alguém já tentou desligar e ligar de novo?',
+ 'nexus-setor-4':'Nossa, que cheiro horrível. Vamos vazar daqui, tá?',
+ 'nexus-premonicao':'Nossa, que sensação estranha, parece que eu tô tendo uma premonição.',
  'nexus-vitoria-1':'Não esqueçam de votar na gente, para que essa premonição se concretize!'
 };
 const name=process.argv[2];if(!lines[name])throw Error('Escolha um nome de áudio cadastrado no roteiro.');

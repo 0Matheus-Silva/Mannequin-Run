@@ -60,6 +60,7 @@ export class StoryFinale{
     for(let x=-13;x<14;x+=1.1)this.round(g,this.purple,x,5.2,-197.7,.25,10.4);
     this.box(g,this.wood,0,.18,-191,18,.36,13);
     this.text(g,'EXPOTECH 2026',0,6.6,-197.45,15,2.1,sign('EXPOTECH 2026','#f5dfad','#162d44'));
+    for(const x of [-7.1,7.1])this.box(g,this.dark,x,9.25,-197.45,.12,3.2,.12);
     this.winnerScreen=this.text(g,'WIN! — 1º LUGAR',0,5.05,-197.4,8,.65,sign('WIN! — 1º LUGAR','#ffe1a1','#162d44'));this.winnerScreen.visible=false;
     this.winnerLight=new THREE.PointLight(0xffdc8e,0,12,2);this.winnerLight.position.set(0,6,-188);g.add(this.winnerLight);
     const places=[{x:-4.4,height:1.2,rank:'2'},{x:0,height:1.8,rank:'1'},{x:4.4,height:.95,rank:'3'}];
