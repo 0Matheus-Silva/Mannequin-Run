@@ -125,3 +125,8 @@ dialog .settings-note { font-size:16px; }
 @keyframes collect-pulse { from { color:#6effc7; text-shadow:0 0 20px #6effc7; } to { color:#e1f7f6; text-shadow:none; } }
 .game-overlay .panel { animation:panel-entry .28s ease-out; }
 @keyframes panel-entry { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+#rescue-hud{position:absolute;top:215px;right:70px;display:flex;flex-direction:column;gap:8px;padding:14px 18px;background:#071a20e8;border:1px solid #66d4c4;color:#c5fff1;font:14px/1.4 Consolas,monospace;z-index:2}
+#rescue-hud span{font-size:11px;color:#a6ceca}
+#rescue-fire{border:1px solid #65d7c5;background:#123531;color:#dbfff5;padding:10px;cursor:pointer}
+#rescue-progress{width:100%;height:12px;accent-color:#65e8c8}
+#rescue-instruction{position:absolute;z-index:8;top:37%;left:50%;transform:translate(-50%,-50%);width:min(760px,80%);padding:24px 32px;text-align:center;background:#0c2423ed;border:1px solid #8cebd6;color:#e9fff6;font:18px/1.7 Consolas,monospace;letter-spacing:1px;box-shadow:0 12px 50px #0009}#rescue-instruction strong{color:#8af5d8;font-size:15px}

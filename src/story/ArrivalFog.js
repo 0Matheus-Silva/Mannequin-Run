@@ -1,8 +1,8 @@
-const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
-// The old world disappears only after the veil has become opaque.
-export function arrivalFogOpacity(mode,state,distance,elapsed=0){
+﻿const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
+// Reach full opacity before swapping worlds, then uncover the campus gradually.
+export function arrivalFogOpacity(mode,state,distance,elapsed=0,ready=true){
  if(mode!=='story')return 0;
- if(state==='playing')return .98*smooth((distance-2345)/55);
- if(state==='ending')return .98*(1-smooth((elapsed-.5)/2.2));
+ if(state==='playing')return ready?smooth((distance-2990)/10):0;
+ if(state==='ending')return 1-smooth((elapsed-.8)/2.4);
  return 0;
 }

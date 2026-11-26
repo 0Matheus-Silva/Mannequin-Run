@@ -13,7 +13,7 @@
 #assistant-minimize { align-self:flex-start; font-size:22px!important; padding:0 10px!important; margin-left:auto; }
 #assistant-disclosure { color:#8fceca; font:11px/1.5 Consolas,monospace; margin:0; padding:9px; border-left:2px solid #63dad1; background:#10242d; }
 .assistant-provider-row { display:flex; align-items:center; gap:15px; font-size:12px; }
-#assistant-provider { flex:1; width:240px; background:#0a1820; border:1px solid #40616b; color:#cde4e7; padding:8px; font-size:12px!important; }
+#assistant-provider, #assistant-key { flex:1; width:240px; background:#0a1820; border:1px solid #40616b; color:#cde4e7; padding:8px; font-size:12px!important; }
 #assistant-external { font-size:11px; color:#e1caa5; padding:8px; background:#35291970; }
 #assistant-external p { margin:0 0 5px; }
 #assistant-external input { accent-color:#76d7d3; }
@@ -36,7 +36,3 @@
 #assistant-end { align-self:flex-end; padding:6px!important; background:transparent!important; color:#b4bec1!important; }
 @keyframes assistant-pulse { to { filter:drop-shadow(0 0 8px #47e3d4a0); } }
 @media (prefers-reduced-motion:reduce) { #assistant-panel .assistant-avatar { animation:none!important; } }
-#music-controls { position:absolute; left:70px; top:70px; display:flex; align-items:center; gap:5px; max-width:720px; padding:6px; border:1px solid #41636f; background:#071a22e8; color:#a7d9d5; font:11px Consolas,monospace; }
-#music-controls button { border:1px solid #41636f; background:#102630; color:#d0efeb; padding:8px; cursor:pointer; }
-#music-controls button:disabled { opacity:.4; cursor:default; }
-#music-status { max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

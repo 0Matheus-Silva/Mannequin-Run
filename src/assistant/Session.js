@@ -5,10 +5,9 @@ import { VoiceOutput } from './audio/VoiceOutput.js';
 import { ASSISTANT_CONFIG } from './Config.js';
 
 export class AssistantSession{
-  constructor(ui,{microphone,voice,providerFactory,music}={}){
-    this.ui=ui;this.music=music;this.history=[];this.active=false;this.epoch=0;this.state='idle';this.microphone=microphone??new Microphone();this.voice=voice??new VoiceOutput(speaking=>{this.speaking=speaking;if(this.active)this.status(speaking?'speaking':this.microphone.active?'listening':'ready');});this.providerFactory=providerFactory??((kind)=>kind==='live'?new GeminiProvider(event=>this.event(event),{toolHandler:(name,args)=>this.musicTool(name,args)}):new DemoProvider(this.knowledge,this.personality));
+  constructor(ui,{microphone,voice,providerFactory}={}){
+    this.ui=ui;this.history=[];this.active=false;this.epoch=0;this.state='idle';this.microphone=microphone??new Microphone();this.voice=voice??new VoiceOutput(speaking=>{this.speaking=speaking;if(this.active)this.status(speaking?'speaking':this.microphone.active?'listening':'ready');});this.providerFactory=providerFactory??((kind)=>kind==='live'?new GeminiProvider(event=>this.event(event),{slot:this.ui.keySlot?.()??"principal"}):new DemoProvider(this.knowledge,this.personality));
   }
-  async musicTool(name,args){if(name!=='controlar_apple_music')throw Error('Comando desconhecido.');if(!this.music)throw Error('Reprodutor indisponível.');return this.music.command(args?.acao,args?.busca);}
   async load(){const responses=await Promise.all(['knowledge','personality'].map(name=>fetch('./assets/assistant/'+name+'.json')));if(responses.some(r=>!r.ok))throw Error('Base local do personagem indisponível.');[this.knowledge,this.personality]=await Promise.all(responses.map(r=>r.json()));}
   status(state,note=''){this.state=state;this.ui.status(state,note);}
   message(role,text,append=false){if(append&&this.history.at(-1)?.role===role)this.history.at(-1).text=(this.history.at(-1).text+text).slice(0,6000);else this.history.push({role,text:String(text).slice(0,6000)});if(this.history.length>ASSISTANT_CONFIG.maxMessages)this.history.splice(0,this.history.length-ASSISTANT_CONFIG.maxMessages);this.ui.history(this.history);}

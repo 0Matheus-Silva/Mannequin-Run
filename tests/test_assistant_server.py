@@ -67,31 +67,15 @@ class BrokerTests(unittest.TestCase):
         self.assertEqual(broker.issue()[0], 429)
         self.assertEqual(len(calls), 2)
 
-    def test_daily_limit_still_blocks_without_contacting_provider(self):
-        def forbidden(*_, **__):
-            self.fail("Local limit must not contact provider")
-        broker = server_module.Broker(self.env(), forbidden)
-        broker.count = broker.daily_limit
-        self.assertEqual(broker.issue()[1]["code"], "local_daily_limit")
-
-    def test_configurable_limit_allows_more_than_ten_without_bypassing_google(self):
+    def test_no_project_local_daily_limit(self):
         calls = []
         def fake(request, timeout):
             calls.append(request)
             return io.BytesIO(b'{"name":"auth_tokens/mock-only"}')
-        env = {**self.env(), "GEMINI_LOCAL_DAILY_LIMIT": "12"}
-        broker = server_module.Broker(env, fake)
-        for _ in range(12):
+        broker = server_module.Broker(self.env(), fake)
+        for _ in range(35):
             self.assertEqual(broker.issue()[0], 200)
-        status, body = broker.issue()
-        self.assertEqual(status, 429)
-        self.assertEqual(body["code"], "local_daily_limit")
-        self.assertIn("12", body["error"])
-        self.assertEqual(len(calls), 12)
-
-    def test_invalid_daily_limit_keeps_finite_default(self):
-        for value in ["invalid", "0", "-1", "1001", ""]:
-            self.assertEqual(server_module.Broker({**self.env(), "GEMINI_LOCAL_DAILY_LIMIT": value}).daily_limit, 30)
+        self.assertEqual(len(calls), 35)
 
     def test_google_quota_is_identified_without_exposing_provider_details(self):
         def fake(request, timeout):
@@ -100,6 +84,24 @@ class BrokerTests(unittest.TestCase):
         self.assertEqual(status, 429)
         self.assertEqual(body["code"], "provider_quota")
         self.assertNotIn("private detail", json.dumps(body))
+
+    def test_manual_reserve_selection_and_no_automatic_fallback(self):
+        calls = []
+        def fake(request, timeout):
+            calls.append(request.get_header("X-goog-api-key"))
+            if len(calls) == 1:
+                raise urllib.error.HTTPError(request.full_url, 429, "quota", {}, None)
+            return io.BytesIO(b'{"name":"auth_tokens/mock-only"}')
+        env = {**self.env(), "GEMINI_API_KEY_2": "reserve-test-only"}
+        broker = server_module.Broker(env, fake)
+        self.assertEqual(broker.issue()[0], 429)
+        self.assertEqual(len(calls), 1)
+        status, result = broker.issue("reserva1")
+        self.assertEqual(status, 200)
+        self.assertEqual(calls, ["dummy-test-only", "reserve-test-only"])
+        self.assertNotIn("reserve-test-only", json.dumps(result))
+        self.assertEqual(broker.issue("reserva2")[0], 400)
+        self.assertEqual(broker.issue([])[0], 400)
 
     def test_network_failure_sanitized(self):
         def fake(*_, **__):

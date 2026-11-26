@@ -1,8 +1,0 @@
-export class MusicBridge extends EventTarget{
-  constructor({Channel=globalThis.BroadcastChannel}={}){super();this.pending=new Map();this.status={connected:false,playing:false,text:'Reprodutor não conectado.'};if(Channel){this.channel=new Channel('nexus-apple-music-v1');this.channel.onmessage=e=>this.receive(e.data);this.channel.postMessage({kind:'hello'});}}
-  receive(message){if(!message||typeof message!=='object')return;if(message.kind==='status'){this.status={connected:!!message.connected,playing:!!message.playing,text:String(message.text||'').slice(0,200)};this.dispatchEvent(new Event('change'));}
-    if(message.kind==='response'){const pending=this.pending.get(message.id);if(!pending)return;clearTimeout(pending.timer);this.pending.delete(message.id);message.ok?pending.resolve(message.result):pending.reject(Error(String(message.error||'Não foi possível controlar o Apple Music.')));}}
-  command(action,query=''){if(!this.channel)return Promise.reject(Error('Seu navegador não permite comunicação entre abas.'));if(!['play','pause','resume','next','previous'].includes(action))return Promise.reject(Error('Comando inválido.'));
-    const id=crypto.randomUUID();return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{this.pending.delete(id);reject(Error('Abra e conecte a aba do Apple Music para continuar.'));},12000);this.pending.set(id,{resolve,reject,timer});this.channel.postMessage({kind:'command',id,action,query:String(query).slice(0,180)});});}
-  close(){this.channel?.close();for(const item of this.pending.values()){clearTimeout(item.timer);item.reject(Error('Reprodutor desconectado.'));}this.pending.clear();}
-}

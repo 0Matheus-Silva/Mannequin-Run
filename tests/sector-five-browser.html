@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+const result=document.querySelector('#result'),frame=document.querySelector('#frame');
+try{
+ for(let n=0;n<200&&!frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE');n++)await new Promise(r=>setTimeout(r,100));
+ const doc=frame.contentDocument,ready=new Promise(r=>doc.addEventListener('sector-five-ready',e=>r(e.detail),{once:true})),script=doc.createElement('script');script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('sector-five-ready',{detail:game}));";doc.body.append(script);const game=await ready;
+ game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);game.chooseMode('story');game.startRun('machines');game.track.timer=100;
+ if(game.session.distance<2400||game.sector!==4)throw Error('Quinto setor não iniciou');
+ game.session.distance=2470;game.rescue.update(.02,2470,'story');if(game.rescue.state.hits!==3)throw Error('Pacote não chegou ao servidor');
+ for(let i=0;i<17;i++)game.track.onCollect(0,1.2,0);
+ if(!game.rescue.state.completed)throw Error('Servidor não foi recuperado');
+ game.session.distance=2999;game.track.reset();game.advance(.1);if(game.state!=='ending')throw Error('Chegada não iniciou após resgate: '+game.state);
+ game.update();result.textContent='PASS quinto setor iniciou\nPASS componentes e resgate\nPASS chegada após resgate\nALL PASS';
+}catch(e){result.textContent='FAIL '+e.stack;}
+</script>

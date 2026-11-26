@@ -144,7 +144,7 @@ export class UI {
   }
   mode(mode){
     for(const node of document.querySelectorAll('[data-mode]'))node.setAttribute('aria-pressed',String(node.dataset.mode===mode));
-    document.querySelector('#mode-description').textContent=mode==='story'?'Quatro setores. Um lugar para voltar. UniFECAF / EXPOTECH 2026.':'Corrida sem fim. Quatro ambientes. Um novo recorde.';
+    document.querySelector('#mode-description').textContent=mode==='story'?'Cinco setores. Um lugar para voltar. UniFECAF / EXPOTECH 2026.':'Corrida sem fim. Cinco ambientes. Um novo recorde.';
   }
   ending(phase,time){
     document.querySelector('#ending-caption').hidden=time>=22;

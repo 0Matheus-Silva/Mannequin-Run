@@ -21,7 +21,7 @@ export class Passages{
   reset(){this.lastSound=-1;this.root.visible=false;}
   update(distance,mode='infinite'){
     const s=passageState(distance);this.state=s;
-    this.root.visible=s.visible&&!(mode==='story'&&s.boundary===2400);
+    this.root.visible=s.visible&&s.boundary%3000!==2400&&!(mode==='story'&&s.boundary===3000);
     this.root.position.z=-s.remaining;
     this.leaves.forEach((g,i)=>{g.position.x=(i?1:-1)*(2.55+s.open*5.4);});
     this.alert.emissiveIntensity=s.warning?1.1+Math.sin(distance*1.2)*.25:.25;

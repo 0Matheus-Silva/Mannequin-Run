@@ -94,12 +94,33 @@ function buildContaminatedLandscape(w,g,a,index,side){
   }
   if((index+(side>0?1:0))%3===0){
     const x=side*(9+random()*3),z=-5-random()*6;
-    cylinder(a.bone,x,.75,z,.09,3,0,Math.PI/2);
-    for(let n=0;n<5;n++){
-      const rib=new THREE.Mesh(a.ribGeometry,a.bone);rib.position.set(x,.34,z-1.1+n*.55);rib.scale.set(1,.8,1);g.add(rib);
+    // Weathered animal skulls, with differently shaped and broken antlers.
+    const skullGroup=new THREE.Group();skullGroup.position.set(x,.15,z);skullGroup.rotation.y=Math.PI+(random()-.5)*.35;skullGroup.rotation.z=(random()-.5)*.2;g.add(skullGroup);
+    const variant=Math.floor(random()*3),size=.85+random()*.35;skullGroup.scale.setScalar(size);
+    const part=(material,px,py,pz,sx,sy,sz)=>{const m=new THREE.Mesh(a.sphere,material);m.position.set(px,py,pz);m.scale.set(sx,sy,sz);skullGroup.add(m);return m;};
+    part(a.bone,0,.6,0,.34,.4,.27);part(a.bone,0,.34,-.16,.23,.3,.25);part(a.bone,0,.17,-.28,.13,.16,.22);
+    for(const sign of [-1,1]){part(a.bone,sign*.25,.43,-.12,.12,.17,.15);part(a.deadWood,sign*.2,.57,-.245,.105,.135,.045);}
+    part(a.deadWood,0,.22,-.485,.075,.09,.025);
+    const branch=(from,to,r1,r2)=>{const start=new THREE.Vector3(...from),end=new THREE.Vector3(...to),delta=end.clone().sub(start);const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r2,r1,delta.length(),7),a.bone);mesh.position.copy(start).add(end).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());skullGroup.add(mesh);};
+    for(const sign of [-1,1]){
+      const reach=variant===1?.7:1,broken=variant===2&&sign===1;
+      branch([sign*.25,.82,0],[sign*.55,1.08,.02],.095,.075);
+      branch([sign*.55,1.08,.02],[sign*.95*reach,1.3,.04],.075,.045);
+      if(!broken){branch([sign*.95*reach,1.3,.04],[sign*1.15*reach,1.75,.06],.045,.012);branch([sign*.73,1.2,.03],[sign*.78,1.62,-.03],.05,.012);if(variant!==1)branch([sign*1.03,1.46,.05],[sign*1.34,1.65,.08],.03,.008);}
     }
-    const skull=new THREE.Mesh(a.sphere,a.bone);skull.position.set(x,.52,z-1.9);skull.scale.set(.35,.25,.5);g.add(skull);
-    for(const s of [-1,1])cylinder(a.bone,x+s*.48,.25,z+1,.055,1.1,s*.8);
+    if(variant===2){const fragment=part(a.bone,.75,.07,.32,.35,.05,.05);fragment.rotation.y=.6;}
+
+  }
+  // Scattered weathered limb bones form small irregular piles across the landscape.
+  for(const distance of [15,28,45,67,89]){
+    if(random()<.25)continue;
+    const bx=side*(distance+(random()-.5)*5),bz=-2-random()*12,count=3+Math.floor(random()*4);
+    for(let n=0;n<count;n++){
+      const bone=new THREE.Group();bone.position.set(bx+(random()-.5)*1.4,.10+random()*.24,bz+(random()-.5)*1.4);bone.rotation.set((random()-.5)*.4,random()*Math.PI,(random()-.5)*.4);g.add(bone);
+      const length=.5+random()*.8,radius=.045+random()*.025;
+      const shaft=new THREE.Mesh(w.labCylinder,a.bone);shaft.rotation.z=Math.PI/2;shaft.scale.set(radius,length,radius);bone.add(shaft);
+      for(const end of [-1,1]){const joint=new THREE.Mesh(a.sphere,a.bone);joint.position.x=end*length*.5;joint.scale.set(radius*1.6,radius*1.45,radius*1.3);bone.add(joint);}
+    }
   }
   for(let n=0;n<2;n++){const haze=new THREE.Sprite(a.mist);haze.position.set(side*(13+n*17),.8+n*.6,-4-n*8);haze.scale.set(12,3,1);g.add(haze);}
 }
@@ -112,6 +133,11 @@ export function buildExterior(w,index,sector){
   const chasmSide=chasmSideFor(index,sector);
   g.userData.chasmSide=chasmSide;
   if(chasmSide){
+    // Extend solid ruined land beyond the lava so the horizon has no empty gaps.
+    box(a.distant,chasmSide*57,-5.1,-8,88,.6,16);
+    for(let n=0;n<9;n++){const x=chasmSide*(15+n*9),h=4+random()*6;const ridge=box(n%2?a.concrete:a.distant,x,-4.8+h/2,-8,9.5,h,16);ridge.rotation.z=(random()-.5)*.06;}
+    box(a.distant,chasmSide*103,1,-8,6,14,16);
+    if(index%5===3)box(a.concrete,chasmSide*7,-2.1,-15.9,12,5.5,.3);
     // The outer lane and its entire roadside are absent for this segment.
     box(a.asphalt,-chasmSide*2.325,-.22,-8,7.35,.4,16);
     box(a.lava,chasmSide*7,-4.8,-8,12,.3,16);
@@ -234,6 +260,15 @@ export function buildExterior(w,index,sector){
         const brace=box(w.metal,side*7,2.4,z,2.7,.13,.18);brace.rotation.z=side*(random()-.5)*.35;
       }
       for(let n=0;n<5;n++){const debris=box(a.rust,side*(5.3+random()*2),.14,-random()*16,.3+random()*.8,.2,.4+random());debris.rotation.y=random()*3;}
+    }else if(sector===4){
+      box(a.concrete,side*30,-.25,-8,50,.35,16);
+      for(let n=0;n<5;n++){
+        const x=side*(7+random()*32),z=-2-random()*12,h=1+random()*2.4;
+        const chassis=box(n%2?a.rust:w.metal,x,h*.45,z,1.2,h,1);chassis.rotation.z=(random()-.5)*.9;chassis.rotation.y=random()*3;
+        for(const dx of [-.45,.45]){const limb=cyl(w.dark,x+dx,h*.3,z,.14,h*.8);limb.rotation.z=(random()-.5)*1.5;}
+        const optic=box(w.light,x,h*.7,z+.53,.5,.08,.03);optic.rotation.z=chassis.rotation.z;
+      }
+      for(let n=0;n<3;n++){const slab=box(w.dark,side*(10+n*8),.3,-4-n*4,3,.4,2);slab.rotation.y=random()*2;}
     }else{
       buildContaminatedLandscape(w,g,a,index,side);
       box(w.amber,side*5.4,1.35,-5,.06,.55,.65);

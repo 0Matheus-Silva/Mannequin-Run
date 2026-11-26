@@ -8,20 +8,22 @@ export class PlayerController {
 
   reset() {
     this.lane = 0; this.x = 0; this.y = 0; this.velocityY = 0;
-    this.slideTime = 0; this.slideBlend = 0;
+    this.slideTime = 0; this.slideBlend = 0; this.slideOnLanding=false;
   }
 
   move(direction) { this.lane = Math.max(-1, Math.min(1, this.lane + direction)); }
 
   jump() {
     if (this.y > .01 || this.velocityY !== 0) return false;
-    this.slideTime = 0;
+    this.slideTime = 0; this.slideBlend = 0; this.slideOnLanding=false;
     this.velocityY = JUMP_SPEED;
     return true;
   }
 
   slide() {
-    if (this.y > .01 || this.velocityY !== 0) return false;
+    if (this.y > .01 || this.velocityY !== 0) {
+      this.slideOnLanding=true;this.velocityY=Math.min(this.velocityY,-12);return true;
+    }
     this.slideTime = .85;
     return true;
   }
@@ -31,7 +33,7 @@ export class PlayerController {
     if (this.y > 0 || this.velocityY > 0) {
       this.y = Math.max(0, this.y + this.velocityY * dt - .5 * GRAVITY * dt * dt);
       this.velocityY -= GRAVITY * dt;
-      if (this.y === 0) this.velocityY = 0;
+      if (this.y === 0) {this.velocityY = 0;if(this.slideOnLanding){this.slideTime=.85;this.slideOnLanding=false;}}
     }
     this.slideTime = Math.max(0, this.slideTime - dt);
     this.slideBlend += ((this.slideTime > 0 ? 1 : 0) - this.slideBlend) * (1 - Math.exp(-dt * 28));

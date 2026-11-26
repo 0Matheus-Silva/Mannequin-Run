@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import { Mannequin } from '../player/Mannequin.js';
+import { SuspensionCables } from '../player/SuspensionCables.js';
 import { SectorWorld } from '../environments/SectorWorld.js';
 import { sectorAt } from '../environments/Sectors.js';
+import { withLeftTurn } from '../environments/LeftTurn.js';
+import { bridgeHeight } from '../environments/BridgeProfile.js';
 import { PlayerController } from '../player/PlayerController.js';
 import { Input } from './Input.js';
 import { SwipeInput } from './SwipeInput.js';
@@ -18,6 +21,7 @@ import { createStudioEnvironment,getSurfaces } from '../graphics/SurfaceLibrary.
 import { CinematicRenderer } from '../graphics/CinematicRenderer.js';
 import { Atmosphere } from '../environments/Atmosphere.js';
 import { Passages } from '../environments/Passages.js';
+import { RescueEncounter } from './RescueEncounter.js';
 import { storyComplete } from './Progression.js';
 import { StoryFinale } from '../story/StoryFinale.js';
 import { chapterById } from './Chapters.js';
@@ -64,9 +68,9 @@ export class Game {
     this.elevatedRoute=new ElevatedRoute(this.scene);
     this.atmosphere=new Atmosphere(this.scene);this.atmosphere.update(0);
     this.passages=new Passages(this.scene,()=>this.audio?.effect('door'));
-    this.finale=null;this.fallElapsed=0;
+    this.finale=null;this.fallElapsed=0;this.rescue=new RescueEncounter(this.scene);
     this.sector = 0;
-    this.player = new Mannequin(); this.scene.add(this.player.root);
+    this.player = new Mannequin(); this.scene.add(this.player.root);this.cables=new SuspensionCables(this.scene,this.player);
     this.contactShadow=new THREE.Mesh(new THREE.PlaneGeometry(1.4,1.9),new THREE.MeshBasicMaterial({map:getSurfaces().glow,color:0x000207,transparent:true,opacity:.5,depthWrite:false}));
     this.contactShadow.rotation.x=-Math.PI/2;this.contactShadow.position.y=.025;this.scene.add(this.contactShadow);
     this.motion = new PlayerController();
@@ -79,8 +83,8 @@ export class Game {
     this.effects = new Effects(this.scene);
     this.session = new RunSession(this.records);
     this.track = new TrackObjects(this.scene, (x,y,z) => {
-      this.session.collect();this.effects.burst(x,y,z);this.audio.effect('collect');this.ui.collect();
-    }, type => this.hitObstacle(type));
+      this.session.collect();if(this.session.mode==='story')this.rescue.collect(this.session.distance,x,y);this.effects.burst(x,y,z);this.audio.effect('collect');this.ui.collect();
+    }, type => this.hitObstacle(type),()=>this.audio.playNexusCue('quase'));
     this.setQuality(this.settings.quality);
     this.input = new Input(action => this.action(action));
     this.swipes=new SwipeInput(document.querySelector('#stage'),action=>this.action(action),{enabled:()=>this.state==='playing'&&!document.querySelector('dialog[open]')});
@@ -140,8 +144,8 @@ export class Game {
 
   beginRun(){
     if(this.state!=='menu')return;
-    this.activeChapter='campaign';this.lastStumble=-Infinity;this.fallCause=null;
-    this.motion.reset();this.session.reset(this.settings.mode);this.world.mode=this.settings.mode;this.track.reset();this.effects.reset();this.passages.reset();
+    this.activeChapter='campaign';this.lastStumble=-Infinity;this.fallCause=null;this.rescueVoicePlayed=false;this.rescuePiecesVoicePlayed=false;this.rescueNarrative=null;this.rescueVoiceEpoch=(this.rescueVoiceEpoch??0)+1;
+    this.audio.resetNexusQueue();this.audio.resetNexusHistory();this.chasmJumpActive=false;this.premonitionPlayed=false;this.motion.reset();this.session.reset(this.settings.mode);this.rescue.reset();this.world.mode=this.settings.mode;this.track.reset();this.effects.reset();this.passages.reset();
     this.sequence.begin(this.player.root.rotation.y,this.camera.position,this.target);
     this.audio.setSector(0,false);void this.audio.unlock();
     this.setState('starting');document.activeElement?.blur();
@@ -149,10 +153,10 @@ export class Game {
   }
 
   startRun(chapterId=this.activeChapter??'campaign',checkpoint=null) {
-    this.lastStumble=-Infinity;this.fallCause=null;
+    this.lastStumble=-Infinity;this.fallCause=null;this.rescueVoicePlayed=false;this.rescuePiecesVoicePlayed=false;this.rescueNarrative=null;
     this.events.dispatchEvent(new CustomEvent('beforerunreset'));
     const chapter=chapterById(this.settings.mode==='story'?chapterId:'campaign');this.activeChapter=chapter.id;
-    this.motion.reset(); this.session.reset(this.settings.mode);this.world.mode=this.settings.mode; this.track.reset();this.finale?.reset();this.world.root.visible=true;this.passages.reset();this.fallElapsed=0;
+    this.audio.resetNexusQueue();this.audio.resetNexusHistory();this.chasmJumpActive=false;this.motion.reset(); this.session.reset(this.settings.mode);this.rescue.reset(chapter.distance);this.world.mode=this.settings.mode; this.track.reset();this.finale?.reset();this.world.root.visible=true;this.passages.reset();this.fallElapsed=0;
     this.world.reset(); this.sector = 0; this.ui.sector(0, true);
     this.effects.reset();this.audio.setSector(0,false);void this.audio.unlock();
     this.player.root.rotation.y = 0;
@@ -160,40 +164,57 @@ export class Game {
     this.setState('playing'); document.activeElement?.blur();
     if(chapter.id!=='campaign'){
       this.session.distance=chapter.distance;this.session.startDistance=chapter.distance;this.session.practice=true;
-      this.world.segments.forEach((segment,i)=>{const absolute=chapter.distance-segment.position.z+8;this.world.replace(i,chapter.distance>=2400?1:this.settings.mode==='story'&&absolute>=2400?3:sectorAt(absolute));});
+      this.world.segments.forEach((segment,i)=>{const absolute=chapter.distance-segment.position.z+8;this.world.replace(i,this.settings.mode==='story'&&chapter.distance<3000&&absolute>=3000?4:this.world.sectorFor(absolute));});
       this.world.applyPalette(chapter.distance);this.atmosphere.update(chapter.distance,'story');this.passages.update(chapter.distance,'story');
       this.sector=sectorAt(chapter.distance);this.ui.sector(this.sector,true);this.audio.setSector(this.sector,false);
       this.camera.position.set(0,3.8,7);this.target.set(0,1.4,-7);this.camera.lookAt(this.target);
+      const chapterVoice=chapter.id==='machines'?this.nextBridgeVoice():{city:'nexus-setor-2',industry:'nexus-setor-3',contamination:'nexus-setor-4',arrival:'nexus-premonicao'}[chapter.id];
+      if(chapterVoice&&this.audio.enabled)void this.audio.unlock().then(ok=>{if(ok&&this.state==='playing'&&this.activeChapter===chapter.id)this.audio.queueNexusLine(chapterVoice);});
       if(chapter.endingTime!==undefined){this.startEnding();this.finale.seek(chapter.endingTime);}
       this.update();this.ui.status('TRECHO DO MODO HISTÓRIA / '+chapter.name);
     }
-    if(checkpoint){this.session.distance=Number(checkpoint.distance);this.session.items=Number(checkpoint.items);this.session.time=Number(checkpoint.duration);this.session.startDistance=0;this.session.practice=false;this.session.resumed=true;this.ui.status('CAMPANHA RETOMADA DO CHECKPOINT');}
+    if(checkpoint){this.session.distance=Number(checkpoint.distance);this.session.items=Number(checkpoint.items);this.session.time=Number(checkpoint.duration);this.session.startDistance=0;this.session.practice=false;this.session.resumed=true;this.rescue.reset(this.session.distance);this.ui.status('CAMPANHA RETOMADA DO CHECKPOINT');}
     this.events.dispatchEvent(new CustomEvent('runstart'));
   }
 
   launchChapter(id){if(this.state!=='menu')return;this.chooseMode('story');const chapter=chapterById(id);if(chapter.id==='campaign')this.beginRun();else this.startRun(chapter.id);}
 
+  nextBridgeVoice(){return 'nexus-ponte-2';}
+
+  updateRescueNarrative(){
+    if(this.session.mode!=='story'||!this.rescue.state.completed)return true;
+    const n=this.rescueNarrative??=( {started:this.session.time,stage:0} );
+    const audio=this.audio,available=audio.enabled&&audio.context?.state==='running';
+    if(n.stage===0&&this.session.time-n.started>=4){if(!available||audio.nexusMayPlay?.('nexus-ponte-1')===false||audio.queueNexusLine('nexus-ponte-1'))n.stage=1;}
+    const ready=()=>!audio.nexusQueue?.length&&audio.context.currentTime>=(audio.nexusVoiceUntil??0)+1;
+    if(n.stage===1&&this.session.time-n.started>=8&&(!available||ready())){if(!available||audio.nexusMayPlay?.('nexus-premonicao')===false||audio.queueNexusLine('nexus-premonicao'))n.stage=2;}
+    if(n.stage===2&&this.session.time-n.started>=12&&(!available||(!audio.nexusQueue?.length&&audio.context.currentTime>=(audio.nexusVoiceUntil??0)-3)))n.stage=3;
+    return n.stage===3;
+  }
+
   crash(cause='obstacle') {
     if (this.state !== 'playing') return;
+    if(cause==='chasm')this.audio.playNexusCue('cratera');
+    else {this.audio.resetNexusQueue();const choices=['nexus-derrota-1','nexus-derrota-1','nexus-derrota-1','nexus-derrota-matheus','nexus-derrota-pedro','nexus-derrota-vitor'];this.audio.queueNexusLine(choices[Math.floor(Math.random()*choices.length)]);}
     this.fallCause=cause;this.session.finish();this.fallElapsed=0;this.player.impactTime=0;if(cause!=='chasm'){this.effects.burst(this.motion.x,1,0,true);this.audio.effect('crash');this.ui.hit();}this.setState('falling');
     this.events.dispatchEvent(new CustomEvent('runfinish',{detail:{result:'crashed'}}));
   }
 
   hitObstacle(type){
     if(fatalCollision(type,this.session.time,this.lastStumble??-Infinity)){this.crash();return true;}
-    this.lastStumble=this.session.time;this.ui.hit();this.effects.burst(this.motion.x,.5,0,true);this.audio.effect('crash');return false;
+    this.audio.playNexusCue('tropeco');this.lastStumble=this.session.time;this.ui.hit();this.effects.burst(this.motion.x,.5,0,true);this.audio.effect('crash');return false;
   }
 
   chooseMode(mode){if(this.state!=='menu')return;this.activeChapter='campaign';this.settings.mode=mode==='story'?'story':'infinite';this.settings.save();this.ui.mode(this.settings.mode);}
   startEnding(){
-    this.session.distance=2400;this.session.finish();this.track.reset();this.passages.reset();
+    this.rescue.root.visible=false;this.rescue.hud.hidden=true;this.session.distance=3000;this.session.finish();this.track.reset();this.passages.reset();
     this.events.dispatchEvent(new CustomEvent('runfinish',{detail:{result:'completed'}}));
     this.finale??=new StoryFinale(this);this.finale.start();this.setState('ending');
   }
 
   setState(state) {
     this.state = state;
-    if (state === 'menu') { this.motion.reset(); this.track.reset(); this.effects.reset();this.world.reset();this.world.root.visible=true;this.atmosphere.update(0);this.passages.reset();this.finale?.reset();this.sector = 0; this.ui.sector(0, false);this.audio.setSector(0,false);this.sequence.active=false;this.player.resetPose();this.player.root.rotation.y=Math.atan2(-3.1,-6.3); }
+    if (state === 'menu') { this.rescue.reset();this.motion.reset(); this.track.reset(); this.effects.reset();this.world.reset();this.world.root.visible=true;this.atmosphere.update(0);this.passages.reset();this.finale?.reset();this.sector = 0; this.ui.sector(0, false);this.audio.setSector(0,false);this.sequence.active=false;this.player.resetPose();this.player.root.rotation.y=Math.atan2(-3.1,-6.3); }
     this.audio.setPlaying(state==='playing'||state==='ending'||state==='victory');
     if(state==='playing')void this.audio.unlock();
     this.track.root.visible = !['menu','starting','ending','victory'].includes(state)&&!(state==='paused'&&['ending','victory'].includes(this.resumeState));
@@ -204,6 +225,8 @@ export class Game {
   start() {
     this.setState('menu');
     this.renderer.setAnimationLoop(() => this.update());
+    const prepareFinale=()=>{if(!this.finale)this.finale=new StoryFinale(this);};
+    if(globalThis.requestIdleCallback)requestIdleCallback(prepareFinale,{timeout:3000});else setTimeout(prepareFinale,500);
   }
 
   advance(dt) {
@@ -219,19 +242,25 @@ export class Game {
       const step = Math.min(dt, 1/120);
       const beforeDistance=this.session.distance;
       this.motion.update(step); this.session.update(step);
-      const cycleBefore=((beforeDistance%2400)+2400)%2400,cycleAfter=((this.session.distance%2400)+2400)%2400;
-      if(cycleBefore<1400&&cycleAfter>=1400)this.ui.status('ESTRADA ELEVADA À FRENTE · SIGA PELA FAIXA CENTRAL');
-      if(crossesEntrance(beforeDistance,this.session.distance)&&Math.abs(this.motion.x)<=1.05)this.ui.status('ESTRADA ELEVADA · CONTINUE A CORRIDA');
-      if(this.session.mode==='story'&&!this.session.practice)for(const distance of [600,1200,1800,2300])if(beforeDistance<distance&&this.session.distance>=distance)this.events.dispatchEvent(new CustomEvent('checkpoint',{detail:{distance}}));
+      const cycleBefore=((beforeDistance%3000)+3000)%3000,cycleAfter=((this.session.distance%3000)+3000)%3000;
+      if(cycleBefore<1400&&cycleAfter>=1400)this.ui.status('ESTRADA ELEVADA À FRENTE');
+      if(crossesEntrance(beforeDistance,this.session.distance))this.ui.status('ESTRADA ELEVADA · CONTINUE A CORRIDA');
+      if(this.session.mode==='story'&&!this.session.practice)for(const distance of [600,1200,1800,2300,2400])if(beforeDistance<distance&&this.session.distance>=distance)this.events.dispatchEvent(new CustomEvent('checkpoint',{detail:{distance}}));
+      if(this.session.mode==='story'&&this.session.distance>=2990&&(!this.rescue.state.completed||!this.updateRescueNarrative())){this.session.distance=2990;if(!this.rescue.state.completed)this.ui.status('PEGUE COMPONENTES PARA AJUDAR O SERVIDOR');}
       if(storyComplete(this.session.mode,this.session.distance)){this.startEnding();return;}
+      if(this.rescue.update(step,this.session.distance,this.session.mode))this.audio.effect('collect');
+      if(this.rescue.state.completed)this.updateRescueNarrative();
+      if(this.session.mode==='story'&&!this.rescuePiecesVoicePlayed&&this.rescue.state.hits>=4&&!this.rescue.state.completed&&this.audio.playNexusReaction('nexus-servidor-pecas'))this.rescuePiecesVoicePlayed=true;
       this.world.update(step, this.session.speed, this.session.distance);
       this.elevatedRoute.update(this.session.distance);
       this.passages.update(this.session.distance,this.session.mode);
       const sector = sectorAt(this.session.distance);
-      if (sector !== this.sector) { this.sector = sector; this.ui.sector(sector, true);this.audio.setSector(sector); }
-      if(this.motion.y<=.01&&this.motion.velocityY<=0&&this.world.chasmAt(this.motion.x)){this.crash('chasm');return;}
-      if(crossesEntrance(beforeDistance,this.session.distance)&&Math.abs(this.motion.x)>1.05){this.crash();return;}
-      this.track.update(step, this.session.speed, this.motion, this.session.time,this.session.distance,z=>this.world.chasmNear(z)||!routeSpawnAllowed(this.session.distance-z),routeHeight);
+      if (sector !== this.sector) { this.sector = sector; this.ui.sector(sector, true);this.audio.setSector(sector);if(sector>0)this.audio.queueNexusLine(sector===4?this.nextBridgeVoice():'nexus-setor-'+(sector+1)); }
+      const overChasm=this.world.chasmAt(this.motion.x),grounded=this.motion.y<=.01&&this.motion.velocityY<=0;
+      if(overChasm&&!grounded)this.chasmJumpActive=true;
+      if(grounded&&this.chasmJumpActive){if(!overChasm)this.audio.queueNexusLine('nexus-lava');this.chasmJumpActive=false;}
+      if(grounded&&overChasm){this.crash('chasm');return;}
+      this.track.update(step, this.session.speed, this.motion, this.session.time,this.session.distance,z=>({allowed:routeSpawnAllowed(this.session.distance-z)&&!this.rescue.entryProtected(this.session.distance-z,this.session.mode),sides:this.world.chasmSidesNear(z)}),d=>routeHeight(d)+bridgeHeight(d),this.session.mode);
       dt -= step;
     }
   }
@@ -244,7 +273,7 @@ export class Game {
     const menu = this.state === 'menu';
     const running = this.state === 'playing';
     const ending=['ending','victory'].includes(this.state)||(this.state==='paused'&&['ending','victory'].includes(this.resumeState));
-    const elevation=menu||ending?0:routeHeight(this.session.distance);
+    const elevation=menu||ending?0:routeHeight(this.session.distance)+bridgeHeight(this.session.distance);
     this.elevatedRoute.update(menu?0:this.session.distance);if(ending)this.elevatedRoute.root.visible=false;
     this.effects.update(this.state==='paused'?0:dt,running?this.session.speed:0);this.audio.update();
     const cinematic=this.state==='starting'||(this.state==='paused'&&this.resumeState==='starting');
@@ -269,17 +298,26 @@ export class Game {
     const chasmFall=this.fallCause==='chasm'&&(['falling','gameover'].includes(this.state)||(this.state==='paused'&&this.resumeState==='falling'));
     this.player.update(animationDt,chasmFall?false:ending?this.finale.walking:running||(!menu&&!cinematic),this.motion,!chasmFall&&(['falling','gameover'].includes(this.state)||(this.state==='paused'&&this.resumeState==='falling')),{transition:cinematic?this.sequence:null,cameraPosition:this.camera.position,speed:this.session.speed});
     this.player.root.position.y+=elevation;
+    if(menu||cinematic)this.player.root.position.y+=.20*(cinematic?1-THREE.MathUtils.smoothstep(this.sequence.elapsed,.15,1.25):1);
+    this.cables.update(menu?'menu':cinematic?(this.state==='paused'?'paused-starting':'starting'):'hidden',this.sequence.elapsed);
     const stumbleAge=this.session.time-(this.lastStumble??-Infinity);
     this.player.root.visible=!(running&&stumbleAge<3&&Math.floor(stumbleAge*8)%2===1);
     if(running&&stumbleAge>=0&&stumbleAge<.55){const impact=Math.sin(Math.PI*stumbleAge/.55);this.player.body.rotation.x-=impact*.35;this.player.body.rotation.z+=impact*.16;}
     if(chasmFall){this.player.root.position.y-=Math.min(12,this.fallElapsed*this.fallElapsed*9);this.player.body.rotation.x=-.18;this.player.arms.forEach((arm,i)=>{arm.pivot.rotation.z=(i?1:-1)*.55;arm.pivot.rotation.x=-.35;});}
     if(ending)this.finale.present(animationDt);
     const fogState=this.state==='paused'?this.resumeState:this.state;
-    document.querySelector('#arrival-fog').style.opacity=arrivalFogOpacity(this.session.mode,fogState,this.session.distance,this.finale?.elapsed??0);
+    const turnDistance=((this.session.distance%3000)+3000)%3000;
+    const showRescueNotice=this.session.mode==='story'&&running&&turnDistance>=2310&&turnDistance<2420;
+    document.querySelector('#rescue-instruction').hidden=true;
+    if(showRescueNotice&&!this.rescueVoicePlayed){
+      this.rescueVoicePlayed=true;const epoch=this.rescueVoiceEpoch;
+      if(this.audio.context&&this.audio.enabled)setTimeout(()=>{if(this.state==='playing'&&this.rescueVoiceEpoch===epoch&&this.session.distance<2470)void this.audio.loadAwardSounds().then(()=>{if(this.state==='playing'&&this.rescueVoiceEpoch===epoch&&this.session.distance<2470)this.audio.queueNexusLine('nexus-servidor');});},650);
+    }
+    document.querySelector('#arrival-fog').style.opacity=arrivalFogOpacity(this.session.mode,fogState,this.session.distance,this.finale?.elapsed??0,this.rescue.state.completed&&this.rescueNarrative?.stage===3);
     this.contactShadow.position.set(this.player.root.position.x,ending?this.player.root.position.y+.025:elevation+.025,this.player.root.position.z);this.contactShadow.material.opacity=.5/(1+this.motion.y);this.contactShadow.scale.setScalar(1+this.motion.y*.2);
     this.contactShadow.visible=!(this.fallCause==='chasm'&&['falling','gameover'].includes(this.state));
     this.ui.update(this.session);
     this.render();
   }
-  render(){this.renderPipeline.render(this.scene,this.camera);}
+  render(){withLeftTurn(this,()=>this.renderPipeline.render(this.scene,this.camera));}
 }

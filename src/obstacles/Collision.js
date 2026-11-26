@@ -7,10 +7,19 @@ export const fatalCollision=(type,time,lastStumble)=>type!=='jump'||time-lastStu
 
 // Swept longitudinal bounds prevent tunneling at high speed or low frame rate.
 export function overlapsPlayer(player, obstacle, previousZ, z) {
-  const bounds = OBSTACLES[obstacle.type];
+  const bounds = obstacle.type==='slide' && obstacle.sector===1 ? {...OBSTACLES.slide,top:1.7} : OBSTACLES[obstacle.type];
   if (Math.min(previousZ, z) > bounds.depth / 2 + .22 || Math.max(previousZ, z) < -bounds.depth / 2 - .22) return false;
   if (Math.abs(player.x - obstacle.x) >= bounds.width / 2 + .27) return false;
   return player.y + .08 < bounds.top && player.y + player.height > bounds.bottom;
+}
+
+export function isNearMiss(player,obstacle){
+  const bounds=OBSTACLES[obstacle.type],dx=Math.abs(player.x-obstacle.x),edge=bounds.width/2+.27;
+  if(dx>=edge&&dx<edge+.65)return true;
+  if(dx>=edge)return false;
+  if(obstacle.type==='jump')return player.y+.08>=bounds.top&&player.y<1.2;
+  if(obstacle.type==='slide')return player.y<.1&&player.height<=bounds.bottom;
+  return false;
 }
 
 export function canCollect(player, x, previousZ, z, height=1.25, action='free') {
@@ -41,4 +50,13 @@ export function createPattern(index, random = Math.random) {
   return {safeLane,obstacles,route,collectibles};
 }
 
+export function createChasmPattern(index,side,random=Math.random){
+  if(side!==-1&&side!==1)return null;
+  const available=[-1,0,1].filter(lane=>lane!==side);
+  const safeLane=available[Math.floor(random()*available.length)];
+  const obstacleLane=available.find(lane=>lane!==safeLane),type=index%2?'slide':'jump';
+  // Alternate jump and slide rewards on the grounded obstacle lane.
+  const collectibles=[-2,0,2].map((z,i)=>({lane:obstacleLane,z,y:type==='jump'?(i===1?3.15:2.95):.45,action:type}));
+  return {safeLane,obstacles:[{lane:obstacleLane,type}],route:type,collectibles};
+}
 export function createSectorPattern(index,sector,random=Math.random){return createPattern(index,random);}

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { LANE_WIDTH } from '../player/PlayerController.js';
-import { canCollect, createSectorPattern, overlapsPlayer } from './Collision.js';
+import { canCollect, createSectorPattern, createChasmPattern, overlapsPlayer, isNearMiss } from './Collision.js';
 import { batchMeshes } from '../utils/batchMeshes.js';
 import { armorGeometry } from '../graphics/Geometry.js';
 import { getSurfaces } from '../graphics/SurfaceLibrary.js';
@@ -9,8 +9,8 @@ import { buildThematic } from './ThematicModels.js';
 import { sectorAt } from '../environments/Sectors.js';
 
 export class TrackObjects {
-  constructor(scene, onCollect, onCrash) {
-    this.onCollect = onCollect; this.onCrash = onCrash;
+  constructor(scene, onCollect, onCrash, onNearMiss=()=>{}) {
+    this.onCollect = onCollect; this.onCrash = onCrash; this.onNearMiss=onNearMiss;
     this.root = new THREE.Group(); scene.add(this.root);
     this.boxGeometry = new THREE.BoxGeometry(1, 1, 1);
     this.material = new THREE.MeshStandardMaterial({ color: 0x485562, metalness: .75, roughness: .35 });
@@ -78,13 +78,13 @@ export class TrackObjects {
     for (const row of this.rows) { row.active = false; row.group.visible = false; }
   }
 
-  spawn(sector=0) {
+  spawn(sector=0,chasmSide=0) {
     const row = this.rows.find(row => !row.active);
     if (!row) return;
-    const pattern = createSectorPattern(this.index++,sector);
+    const pattern = chasmSide ? createChasmPattern(this.index++,chasmSide) : createSectorPattern(this.index++,sector);
     if(!row.themeSlots[sector])row.themeSlots[sector]=[-1,0,1].map(lane=>{const variants={};for(const type of ['block','jump','slide']){const model=this.obstacle(type,sector);model.position.x=lane*LANE_WIDTH;row.group.add(model);variants[type]=model;}return variants;});
     for(const slots of Object.values(row.themeSlots))for (const slot of slots) for (const mesh of Object.values(slot)) mesh.visible = false;
-    row.obstacles = pattern.obstacles.map(obstacle => ({ ...obstacle, x: obstacle.lane * LANE_WIDTH }));
+    row.obstacles = pattern.obstacles.map(obstacle => ({ ...obstacle, sector, x: obstacle.lane * LANE_WIDTH }));
     row.sector=sector;
     for (const obstacle of row.obstacles) row.themeSlots[sector][obstacle.lane + 1][obstacle.type].visible = true;
     row.route=pattern.route;
@@ -92,9 +92,9 @@ export class TrackObjects {
     row.group.position.z = -85; row.group.visible = true; row.active = true;
   }
 
-  update(dt, speed, player, elapsed,distance=0,chasmNear=()=>false,elevationAt=()=>0) {
+  update(dt, speed, player, elapsed,distance=0,spawnContext=()=>({allowed:true,sides:[]}),elevationAt=()=>0,mode='infinite') {
     this.timer -= dt;
-    if (this.timer <= 0) { if(!chasmNear(-85))this.spawn(sectorAt(distance+85)); this.timer += 1.65 + (this.index < 4 ? .45 : 0); }
+    if (this.timer <= 0) { const context=spawnContext(-85);if(context?.allowed && context.sides.length<2)this.spawn(sectorAt(mode==='story'?Math.min(distance+85,2999):distance+85),context.sides[0]??0); this.timer += 1.65 + (this.index < 4 ? .45 : 0); }
     for (const row of this.rows) {
       if (!row.active) continue;
       const previousZ = row.group.position.z;
@@ -103,6 +103,7 @@ export class TrackObjects {
       row.group.position.y=elevationAt(distance-z);
       for (const obstacle of row.obstacles) {
         if (!obstacle.hit&&overlapsPlayer(player, obstacle, previousZ, z)) { obstacle.hit=true;if(this.onCrash(obstacle.type))return; }
+        if(!obstacle.hit&&previousZ<0&&z>=0&&isNearMiss(player,obstacle))this.onNearMiss();
       }
       for (let i=0;i<row.chips.length;i++) {
         const chip = row.chips[i];

@@ -50,8 +50,7 @@ def live_setup(root=ROOT):
         "model": "models/" + MODEL,
         "generationConfig": {"responseModalities": ["AUDIO"], "speechConfig": {
             "voiceConfig": {"prebuiltVoiceConfig": {"voiceName": VOICE}}}},
-        "systemInstruction": {"parts": [{"text": personality["instruction"] + "\nPara pedidos explícitos de música use controlar_apple_music. Só diga que tocou se a ferramenta confirmar. Se falhar, explique o erro e peça para conectar o reprodutor.\nBASE OFICIAL:\n" + json.dumps(facts, ensure_ascii=False)}]},
-        "tools": [{"functionDeclarations": [{"name": "controlar_apple_music", "description": "Controla o Apple Music apenas quando o visitante pedir música ou controle de reprodução.", "parameters": {"type": "OBJECT", "properties": {"acao": {"type": "STRING", "enum": ["play", "pause", "resume", "next", "previous"]}, "busca": {"type": "STRING", "description": "Nome da música e artista; obrigatório ao tocar uma música."}}, "required": ["acao"]}}]}],
+        "systemInstruction": {"parts": [{"text": personality["instruction"] + "\nBASE OFICIAL:\n" + json.dumps(facts, ensure_ascii=False)}]},
         "inputAudioTranscription": {}, "outputAudioTranscription": {},
     }
 
@@ -69,28 +68,16 @@ class Broker:
         self.env = env
         self.opener = opener
         self.csrf = secrets.token_urlsafe(32)
-        self.count = 0
-        try:
-            self.daily_limit = int(env.get("GEMINI_LOCAL_DAILY_LIMIT", "30"))
-        except (TypeError, ValueError):
-            self.daily_limit = 30
-        if not 1 <= self.daily_limit <= 1000:
-            self.daily_limit = 30
-        self.day = dt.date.today()
-        self.lock = threading.Lock()
 
-    def issue(self):
+    def issue(self, slot="principal"):
+        keys = {"principal": "GEMINI_API_KEY", "reserva1": "GEMINI_API_KEY_2", "reserva2": "GEMINI_API_KEY_3"}
         ready, reason = readiness(self.env)
         if not ready:
             return 403, {"error": reason}
-        with self.lock:
-            if self.day != dt.date.today():
-                self.day, self.count = dt.date.today(), 0
-            if self.count >= self.daily_limit:
-                return 429, {"code": "local_daily_limit", "error": f"Limite local de {self.daily_limit} tentativas por dia atingido. Isso não indica falta de cota no Google. Confira GEMINI_LOCAL_DAILY_LIMIT no backend local."}
-            self.count += 1
+        if not isinstance(slot, str) or slot not in keys or not self.env.get(keys[slot]):
+            return 400, {"error": "Chave selecionada não cadastrada no servidor."}
         request = urllib.request.Request(TOKEN_ENDPOINT, data=json.dumps(token_payload()).encode(), method="POST",
-                                         headers={"Content-Type": "application/json", "x-goog-api-key": self.env["GEMINI_API_KEY"]})
+                                         headers={"Content-Type": "application/json", "x-goog-api-key": self.env[keys[slot]]})
         try:
             with self.opener(request, timeout=12) as response:
                 token = json.loads(response.read(65536))
@@ -101,7 +88,7 @@ class Broker:
             status = 429 if error.code == 429 else 503
             error.close()
             return status, {"code": "provider_quota" if status == 429 else "provider_unavailable",
-                            "error": "O Google recusou a solicitação por cota ou limite de requisições. Confira os limites do projeto no AI Studio; nenhum serviço pago foi ativado." if status == 429 else "Provedor indisponível; nenhum detalhe de credencial é exposto."}
+                            "error": "O Google recusou a solicitação por cota ou limite de requisições. Escolha uma reserva cadastrada e reconecte, ou confira o projeto no AI Studio." if status == 429 else "Provedor indisponível; nenhum detalhe de credencial é exposto."}
         except (OSError, ValueError, KeyError):
             return 503, {"error": "Provedor indisponível. Use a demonstração local."}
 
@@ -136,7 +123,7 @@ def handler_for(broker, root=ROOT):
             path = urllib.parse.unquote(urllib.parse.urlsplit(self.path).path)
             if path == "/api/assistant/config":
                 ready, reason = readiness(broker.env)
-                return self.respond(200, {"ready": ready, "reason": reason, "csrf": broker.csrf, "model": MODEL, "voice": VOICE})
+                return self.respond(200, {"ready": ready, "reason": reason, "csrf": broker.csrf, "model": MODEL, "voice": VOICE, "keySlots": [slot for slot, key in (("principal", "GEMINI_API_KEY"), ("reserva1", "GEMINI_API_KEY_2"), ("reserva2", "GEMINI_API_KEY_3")) if broker.env.get(key)]})
             try:
                 relative = path.lstrip("/") or "index.html"
                 target = (root / relative).resolve()
@@ -167,7 +154,9 @@ def handler_for(broker, root=ROOT):
                 length = int(self.headers.get("Content-Length", "0"))
                 if length < 0 or length > 1024:
                     return self.respond(413, {"error": "Requisição grande demais."})
-                self.rfile.read(length)
+                payload = json.loads(self.rfile.read(length) or b"{}")
+                if not isinstance(payload, dict):
+                    return self.respond(400, {"error": "Requisição inválida."})
             except ValueError:
                 return self.respond(400, {"error": "Requisição inválida."})
             status, value = broker.issue()

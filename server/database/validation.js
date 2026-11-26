@@ -5,16 +5,16 @@ export function player(value) {
   if (!name || name.length > 48 || /[\x00-\x1f\x7f]/.test(name)) throw new Invalid('Use um nome ou apelido de 1 a 48 caracteres.');
   return {id: uuid(value.id), name};
 }
-export const checkpointDistances = [600, 1200, 1800, 2300];
+export const checkpointDistances = [600, 1200, 1800, 2300, 2400, 2900];
 export const finished = result => ['crashed', 'completed', 'abandoned'].includes(result);
 export function run(value) {
   const v = {...value, id: uuid(value.id), playerId: uuid(value.playerId)};
   if (!['story','infinite'].includes(v.mode) || !['running','checkpoint','crashed','completed','abandoned'].includes(v.result)) throw new Invalid('Modo ou resultado inválido.');
   for (const key of ['score','distance','startDistance','items','duration','revision']) if (typeof v[key] !== 'number' || !Number.isFinite(v[key]) || v[key] < 0 || v[key] > 1e9) throw new Invalid('Valores da partida inválidos.');
-  if (![v.score,v.items,v.revision].every(Number.isSafeInteger) || v.revision < 1 || v.startDistance > v.distance || v.items > 1e6 || v.duration > 86400 || (v.mode === 'story' && v.distance > 2400.01)) throw new Invalid('Partida fora dos limites.');
+  if (![v.score,v.items,v.revision].every(Number.isSafeInteger) || v.revision < 1 || v.startDistance > v.distance || v.items > 1e6 || v.duration > 86400 || (v.mode === 'story' && v.distance > 3000.01)) throw new Invalid('Partida fora dos limites.');
   if (v.score !== Math.floor((v.distance-v.startDistance)*10+v.items*75)) throw new Invalid('Pontuação inconsistente.');
   if (typeof v.practice !== 'boolean' || typeof v.resumed !== 'boolean' || (v.result === 'completed' && (v.mode !== 'story' || v.distance < 2400))) throw new Invalid('Estado inválido.');
-  v.sector = v.mode==='story'?Math.min(3,Math.floor(v.distance/600)):Math.floor(v.distance/600)%4;
+  v.sector = v.mode==='story'?Math.min(4,Math.floor(v.distance/600)):Math.floor(v.distance/600)%5;
   v.checkpoint = v.checkpoint ?? 0;
   if (v.checkpoint !== 0 && (!checkpointDistances.includes(v.checkpoint) || v.mode !== 'story' || v.practice || v.checkpoint > v.distance || v.result !== 'checkpoint')) throw new Invalid('Checkpoint inválido.');
   return v;

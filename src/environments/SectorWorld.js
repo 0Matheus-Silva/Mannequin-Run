@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Laboratory } from './Laboratory.js';
+import { buildBridge } from './Bridge.js';
 import { SECTORS, transitionAt } from './Sectors.js';
 import { batchMeshes, releaseInstances } from '../utils/batchMeshes.js';
 import { buildExterior } from './SectorArchitecture.js';
@@ -26,6 +27,7 @@ export class SectorWorld extends Laboratory {
 
   build(index, sector) {
     if (sector===0) return super.createSegment(index);
+    if (sector===4) return buildBridge(this,index);
     return buildExterior(this,index,sector);
   }
   buildPrototype(index,sector){
@@ -80,6 +82,7 @@ export class SectorWorld extends Laboratory {
     return g;
   }
 
+  sectorFor(distance){const cycle=((distance%3000)+3000)%3000;if(cycle>=2400&&cycle<2440)return 3;if(this.mode==='story'&&distance<3000&&distance>=3000-1)return 4;if(this.mode==='story'&&distance>=3000)return 1;return sectorAt(distance);}
   replace(index, sector) {
     const previous=this.segments[index];
     if(previous.userData.sector===sector)return previous;
@@ -99,16 +102,17 @@ export class SectorWorld extends Laboratory {
 
   chasmAt(x){return this.segments.some(segment=>chasmContains(segment,x,this.length));}
   chasmNear(z,margin=12){return this.segments.some(segment=>chasmIntersects(segment,z,margin,this.length));}
+  chasmSidesNear(z,margin=12){return [...new Set(this.segments.filter(segment=>chasmIntersects(segment,z,margin,this.length)).map(segment=>segment.userData.chasmSide))];}
 
   applyPalette(distance) {
     let {current,next,blend}=transitionAt(distance);
-    if(this.mode==='story'&&distance>=2400){current=1;next=1;blend=0;}
-    else if(this.mode==='story'&&distance>=2280){current=3;next=3;blend=0;}
+    if(this.mode==='story'&&distance>=3000){current=1;next=1;blend=0;}
+    else if(this.mode==='story'&&distance>=2880){current=4;next=4;blend=0;}
     this.activeSector=current;
     const a=SECTORS[current],b=SECTORS[next];
     this.scene.background.copy(a.sky).lerp(b.sky,blend);
     this.scene.fog.color.copy(a.fog).lerp(b.fog,blend);
-    const densities=[.025,.014,.012,.016];this.scene.fog.density=THREE.MathUtils.lerp(densities[current],densities[next],blend);
+    const densities=[.025,.014,.012,.016,.007];this.scene.fog.density=THREE.MathUtils.lerp(densities[current],densities[next],blend);
     this.metal.color.copy(a.metal).lerp(b.metal,blend);this.dark.color.copy(a.floor).lerp(b.floor,blend);
     this.light.color.copy(a.accent).lerp(b.accent,blend);this.light.emissive.copy(this.light.color);
     this.screen.emissive.copy(this.light.color).multiplyScalar(.45);
@@ -125,7 +129,7 @@ export class SectorWorld extends Laboratory {
     const architecture=transition.blend>.05?transition.next:transition.current;
     for(let i=0;i<this.segments.length;i++) {
       let segment=this.segments[i];segment.position.z+=dt*speed;
-      if(segment.position.z>32){segment.position.z-=this.length*this.segments.length;const absolute=distance-segment.position.z+8;segment=this.replace(i,this.mode==='story'&&distance<2400&&absolute>=2400?3:this.mode==='story'&&absolute>=2400?1:sectorAt(absolute));}
+      if(segment.position.z>32){segment.position.z-=this.length*this.segments.length;const absolute=distance-segment.position.z+8;segment=this.replace(i,this.mode==='story'&&distance<3000&&absolute>=3000?4:this.sectorFor(absolute));}
       for(const mesh of segment.userData.animated??[]) {
         if(mesh.userData.rotor)mesh.rotation.z+=dt*1.6;
         if(mesh.userData.flame)mesh.scale.y=1.5+Math.sin(distance*.4+i)*.3;

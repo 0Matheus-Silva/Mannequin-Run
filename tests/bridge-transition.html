@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><pre id="result">RUNNING</pre><iframe id="frame" src="../index.html" width="960" height="540"></iframe><script type="module">
+const result=document.querySelector('#result'),frame=document.querySelector('#frame');
+try{
+ for(let i=0;i<200&&!frame.contentDocument?.querySelector('#status')?.textContent.includes('SISTEMAS ONLINE');i++)await new Promise(r=>setTimeout(r,100));
+ const doc=frame.contentDocument,ready=new Promise(resolve=>doc.addEventListener('bridge-ready',e=>resolve(e.detail),{once:true})),script=doc.createElement('script');
+ script.type='module';script.textContent="import {game} from './src/main.js';document.dispatchEvent(new CustomEvent('bridge-ready',{detail:game}));";doc.body.append(script);
+ const game=await ready;game.renderer.setAnimationLoop(null);game.audio.setEnabled(false);game.chooseMode('story');game.startRun('machines');game.clock.getDelta=()=>0;
+ if(game.rescue.supplies.length!==0)throw Error('Pacote ainda ocupa as pistas');
+ game.session.distance=2990;game.rescue.state.completed=true;game.rescueNarrative={stage:1,started:game.session.time};game.update();
+ if(Number(doc.querySelector('#arrival-fog').style.opacity)!==0)throw Error('Neblina apareceu durante a sequência');
+ game.rescueNarrative.stage=3;game.session.distance=2995;game.update();
+ if(Number(doc.querySelector('#arrival-fog').style.opacity)<=0)throw Error('Neblina não apareceu no trecho final');
+ game.advance(1);if(game.state!=='ending')throw Error('Chegada não foi iniciada');
+ result.textContent='PASS ponte sem faixa e neblina no fim da rota\nALL PASS';
+}catch(error){result.textContent='FAIL '+error.stack;}
+</script>

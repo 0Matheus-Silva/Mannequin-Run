@@ -26,7 +26,7 @@
         <h1>NEXUS<br><span>RUN</span><em>01 /</em></h1>
         <p class="intro">O laboratório caiu.<br>Você acabou de despertar.</p>
         <div class="mode-select" role="group" aria-label="Modo de jogo"><button data-mode="story" aria-pressed="false">MODO HISTÓRIA</button><button data-mode="infinite" aria-pressed="true">MODO INFINITO</button></div>
-        <p id="mode-description">Corrida sem fim. Quatro ambientes. Um novo recorde.</p>
+        <p id="mode-description">Corrida sem fim. Cinco ambientes. Um novo recorde.</p>
         <button id="play" class="primary">INICIAR <span>↗</span></button><button id="ranking-open" class="secondary">RANKING</button>
         <div class="menu-tools"><button id="help-open" class="secondary">COMO JOGAR <span>+</span></button><button id="chapters-open" class="secondary">CAPÍTULOS <span>↗</span></button></div>
         <div class="build-label"><span>RECORDE PESSOAL</span> <b id="menu-best">0</b></div>
@@ -36,30 +36,31 @@
       <aside class="specimen" id="specimen"><span>UNIDADE 001</span><strong>NEXUS</strong><small>ESTRUTURA SINTÉTICA / NÚCLEO ATIVO</small><div class="specimen-line"></div></aside>
       <section id="hud" hidden aria-label="Dados da partida">
         <div class="hud-values"><div><small>PONTUAÇÃO</small><strong id="score">0</strong></div><div><small>DISTÂNCIA</small><strong id="distance">0 m</strong></div><div><small>COMPONENTES</small><strong id="items">0</strong></div><div><small>RECORDE</small><strong id="best">0</strong></div><div><small>VELOCIDADE</small><strong id="speed">43 km/h</strong></div></div>
+        <section id="rescue-hud" hidden aria-label="Recuperar servidor"><strong id="rescue-count"></strong><progress id="rescue-progress" max="8" value="0" aria-label="Recuperação do servidor"></progress><span id="rescue-message"></span></section>
         <div class="sector-track"><div id="sector-progress"></div></div>
         <button id="pause-button" class="pause-button" aria-label="Pausar partida">Ⅱ / ESC</button>
-        <div class="control-hint"><span class="desktop-controls">A D / FAIXAS · ↑ ESPAÇO / SALTAR · S ↓ / DESLIZAR</span><span class="touch-controls">DESLIZE ← → FAIXAS · ↑ PULAR · ↓ DESLIZAR</span></div>
       </section>
       <section id="pause-panel" class="game-overlay" hidden aria-labelledby="pause-title">
         <div class="panel"><p class="eyebrow">CONEXÃO EM ESPERA</p><h2 id="pause-title">PAUSADO</h2><button id="resume" class="primary">CONTINUAR <span>↗</span></button><button data-restart class="secondary">REINICIAR</button><button data-menu class="secondary">MENU PRINCIPAL</button></div>
       </section>
       <section id="over-panel" class="game-overlay" hidden aria-labelledby="over-title">
-        <div class="panel"><p class="eyebrow">PROTOCOLO INTERROMPIDO</p><h2 id="over-title">FIM DE JOGO</h2><div class="final-score" id="final-score">0</div><div class="results"><span>DISTÂNCIA <b id="final-distance"></b></span><span>COMPONENTES <b id="final-items"></b></span><span>RECORDE <b id="final-best"></b></span></div><button data-restart class="primary">REINICIAR <span>↗</span></button><button data-menu class="secondary">MENU PRINCIPAL</button><p class="key-note">PRESSIONE R PARA REINICIAR</p></div>
+        <div class="panel"><p class="eyebrow">PROTOCOLO INTERROMPIDO</p><h2 id="over-title">FIM DE JOGO</h2><div class="final-score" id="final-score">0</div><div class="results"><span>DISTÂNCIA <b id="final-distance"></b></span><span>COMPONENTES <b id="final-items"></b></span><span>RECORDE <b id="final-best"></b></span></div><button data-restart class="primary">REINICIAR <span>↗</span></button><button data-menu class="secondary">MENU PRINCIPAL</button></div>
       </section>
       <p id="storage-note" hidden>Recorde disponível apenas nesta sessão: armazenamento local indisponível.</p>
-      <p id="gamepad-status" role="status">Teclado disponível · conecte um controle e pressione um botão.</p>
+      <p id="gamepad-status" role="status"></p>
       <p id="ending-caption" hidden></p>
       <div id="award-win" hidden>WIN! <span>1º LUGAR — EXPOTECH 2026</span></div>
       <section id="victory-panel" class="victory-panel" hidden aria-labelledby="victory-title"><p class="eyebrow">A JORNADA ENCONTROU SEU DESTINO</p><h2 id="victory-title">NEXUS RUN</h2><p>UniFECAF · EXPOTECH 2026</p><strong>PRIMEIRO LUGAR</strong><button id="credits-replay" class="secondary">VER CRÉDITOS</button><button data-menu class="primary">VOLTAR AO INÍCIO <span>↗</span></button></section>
       <section id="credits-roll" hidden aria-label="Créditos da equipe"><div id="credits-content"><h2>CDC2NA</h2><p>Fabiano Matheus de Camargo Silva</p><p>Pedro Henrique Freitas de Oliveira</p><p>Vitor Barioni Ferraz</p><small>NEXUS RUN · EXPOTECH 2026</small></div></section>
+      <div id="rescue-instruction" hidden>PEGUE COMPONENTES PARA AJUDAR O SERVIDOR FURIOSO<br><strong>E ENCONTRE O CAMINHO PARA A SAÍDA</strong></div>
       <div id="sector-toast" aria-live="polite"><p id="sector-number"></p><h2 id="sector-name"></h2><small id="sector-subtitle"></small></div>
       <div id="hit-flash" aria-hidden="true"></div>
-      <section id="music-controls" aria-label="Apple Music"><button id="music-open">♫ APPLE MUSIC</button><button id="music-previous" aria-label="Música anterior">⏮</button><button id="music-play" aria-label="Continuar música">▶</button><button id="music-pause" aria-label="Pausar música">Ⅱ</button><button id="music-next" aria-label="Próxima música">⏭</button><span id="music-status" role="status">Reprodutor não conectado.</span></section>
       <button id="assistant-open" aria-expanded="false" aria-controls="assistant-panel">◈ CONVERSAR COM NEXUS</button>
       <aside id="assistant-panel" hidden aria-label="Converse com o Nexus" data-state="idle">
         <header class="assistant-heading"><svg class="assistant-avatar" viewBox="0 0 100 110" preserveAspectRatio="xMidYMid meet" aria-label="Personagem de frente, com capuz preto e máscara ciano de três filtros" role="img"><defs><linearGradient id="avatar-hood" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#26333c"/><stop offset="1" stop-color="#0b1118"/></linearGradient><radialGradient id="avatar-mask"><stop stop-color="#142430"/><stop offset="1" stop-color="#03090f"/></radialGradient></defs><path d="M7 107L10 48Q11 5 50 4Q89 5 90 48L93 107L74 101L69 87H31L26 101Z" fill="url(#avatar-hood)"/><path d="M22 83L20 47Q21 16 50 13Q79 16 80 47L78 83" fill="none" stroke="#3c4a54" stroke-width="2"/><ellipse cx="50" cy="54" rx="29" ry="37" fill="url(#avatar-mask)"/><g fill="#06121c" stroke="#5ae6ef" stroke-width="1.6" stroke-linejoin="round"><path d="M47 39L37 32L25 32L27 45L35 55L44 52Z"/><path d="M53 39L63 32L75 32L73 45L65 55L56 52Z"/><ellipse cx="24" cy="73" rx="10" ry="13"/><ellipse cx="76" cy="73" rx="10" ry="13"/><circle cx="50" cy="72" r="10"/></g><g stroke="#38505b" stroke-width="1.3"><path d="M18 69H30M18 73H30M18 77H30M70 69H82M70 73H82M70 77H82"/><path d="M45 69H55M45 72H55M45 75H55"/></g><path d="M30 94L24 106M70 94L76 106" stroke="#67727a" stroke-width="1.5"/></svg><div><small>UNIDADE CONVERSACIONAL</small><h2>NEXUS</h2><p>Capuz, circuitos e algumas boas perguntas.</p></div><button id="assistant-minimize" aria-label="Minimizar conversa">−</button></header>
         <p id="assistant-disclosure"></p>
         <div class="assistant-provider-row"><label for="assistant-provider">Conexão</label><select id="assistant-provider"><option value="demo">Demonstração local</option><option value="live">Gemini Live (requer configuração)</option></select></div>
+        <div id="assistant-key-row" class="assistant-provider-row" hidden><label for="assistant-key">Chave Gemini</label><select id="assistant-key"><option value="principal">Principal</option><option value="reserva1" disabled>Reserva 1 — não cadastrada</option><option value="reserva2" disabled>Reserva 2 — não cadastrada</option></select></div>
         <div id="assistant-external" hidden><p>Áudio e texto enviados ao Google. No serviço gratuito, dados podem ser usados para aprimorar produtos e revistos por pessoas. Não informe dados pessoais. Público e cota devem ser revisados pela equipe; este aceite não verifica idade.</p><label><input id="assistant-consent" type="checkbox"> Entendi o processamento externo desta sessão.</label></div>
         <div class="assistant-actions"><button id="assistant-start">INICIAR / RECONECTAR</button><button id="assistant-present">CONHEÇA O NEXUS</button></div>
         <div class="assistant-state-row"><i aria-hidden="true"></i><span id="assistant-state" role="status"></span></div><p id="assistant-note" role="status"></p>

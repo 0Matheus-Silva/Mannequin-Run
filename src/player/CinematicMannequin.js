@@ -27,7 +27,7 @@ export class Mannequin {
     this.body.position.set(Math.sin(t*.63)*.018*idle,.018+Math.sin(t*1.7)*.012*idle+Math.abs(Math.sin(this.phase))*.045*r*(1-a)-s*.67-c*.12,0);
     this.body.rotation.set(-.08*r-s*.8-c*.45,Math.sin(this.phase)*.035*r+Math.sin(t*.41)*.035*idle,(motion?motion.lane*2.7-motion.x:0)*-.055-c*.65);
     this.torso.rotation.y=Math.sin(t*.53)*.035*idle+Math.sin(this.phase)*.07*r;
-    this.torso.rotation.x=Math.sin(t*1.7)*.009*idle;
+    this.torso.rotation.x=Math.sin(t*1.7)*.009*idle+Math.sin(this.phase*2+.4)*.018*r;
     this.torso.scale.x=1+Math.sin(t*1.7)*.006*idle;
     this.neck.rotation.set(Math.sin(t*.71)*.025*idle,0,Math.sin(t*.43)*.025*idle);
     if(options.cameraPosition&&!running&&!transition){
@@ -46,11 +46,11 @@ export class Mannequin {
       const leg=this.legs[i],arm=this.arms[i];
       leg.pivot.rotation.x=Math.sin(phase)*.65*r*(1-a)*(1-s)+a*(i?THREE.MathUtils.lerp(.18,.55,rising):THREE.MathUtils.lerp(-.3,-.65,rising))+s*1.1;
       leg.pivot.rotation.z=side*.025*idle;
-      leg.joint.rotation.x=-.08-Math.max(0,Math.cos(phase))*.95*r*(1-a)*(1-s)-a*THREE.MathUtils.lerp(.45,.85,rising)-s*1.5;
+      leg.joint.rotation.x=-.08-Math.max(0,Math.sin(phase+.55))*.95*r*(1-a)*(1-s)-a*THREE.MathUtils.lerp(.45,.85,rising)-s*1.5;
       leg.foot.rotation.x=-Math.max(0,Math.sin(phase))*.25*r*(1-a)+a*THREE.MathUtils.lerp(.12,-.16,rising)+s*.2;
       arm.pivot.rotation.set(-Math.sin(phase)*.48*r*(1-a)*(1-s)+.08*idle+a*(i?.25:-.35)+s*.3,0,-side*(.08+Math.sin(t*.9+i)*.018*idle));
-      arm.joint.rotation.x=-.16-.85*r-a*.12-s*.1;
-      arm.hand.rotation.set(Math.sin(t*.8+i)*.035*idle,side*Math.PI/2,0);
+      arm.joint.rotation.x=.16+(.76+.1*Math.sin(phase+.45))*r+a*.12+s*.1;
+      arm.hand.rotation.set(Math.sin(t*.8+i)*.035*idle+Math.sin(phase-.35)*.055*r,-side*Math.PI/2,0);
       for(let n=0;n<arm.fingers.length;n++)arm.fingers[n].rotation.x=-.12-Math.sin(t*.5+n+i)*.045*idle-.35*r;
     }
     // Sliding uses articulated hips/knees plus a small uniform height correction.

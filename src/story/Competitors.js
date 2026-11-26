@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { getPatina } from '../graphics/Patina.js';
 import { batchMeshes } from '../utils/batchMeshes.js';
 
-// Original exhibition projects: no names, symbols or licensed character assets.
 export function createCompetitor(kind){
   const root=new THREE.Group(),body=new THREE.Group();root.add(body);root.userData.kind=kind;
   const cube=new THREE.BoxGeometry(1,1,1),sphere=new THREE.SphereGeometry(1,16,12),cylinder=new THREE.CylinderGeometry(1,1,1,16);
@@ -12,7 +11,7 @@ export function createCompetitor(kind){
   const box=(p,m,x,y,z,w,h,d)=>add(p,cube,m,x,y,z,w,h,d);
   const ball=(p,m,x,y,z,w,h,d)=>add(p,sphere,m,x,y,z,w,h,d);
   let lid,screen,tongue,tears,monitor;
-  if(kind==='inventor'){
+  if(kind==='inventor'||kind==='mario'){
     // Rounded cap, asymmetric wrench badge and scarf distinguish this original inventor.
     for(const side of [-1,1]){ball(body,boot,side*.24,.13,.12,.23,.13,.34);box(body,blue,side*.23,.46,0,.31,.65,.36);}
     ball(body,red,0,.94,0,.49,.42,.28);box(body,blue,0,.91,.23,.56,.46,.12);
@@ -31,7 +30,13 @@ export function createCompetitor(kind){
     }
     ball(body,skin,0,1.51,.34,.1,.09,.1);
     ball(body,red,0,1.84,0,.4,.21,.33);ball(body,red,.04,1.79,.3,.38,.035,.21);
-    box(body,metal,-.17,1.92,.29,.05,.13,.025);box(body,metal,-.17,1.98,.29,.12,.035,.025);
+    if(kind==='mario'){
+      const badge=ball(body,glove,0,1.88,.309,.13,.105,.025);
+      const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,128,128);ctx.fillStyle='#c92925';ctx.font='bold 92px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('M',64,69);
+      const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;const mark=new THREE.Mesh(new THREE.PlaneGeometry(.17,.14),new THREE.MeshBasicMaterial({map:texture}));mark.position.set(0,1.88,.338);body.add(mark);
+      tears=new THREE.Group();body.add(tears);const tearMat=new THREE.MeshStandardMaterial({color:0x76dfff,emissive:0x2894bd,emissiveIntensity:.3});
+      for(const side of [-1,1])for(let i=0;i<3;i++){const drop=ball(tears,tearMat,side*.13,1.48-i*.08,.34,.025,.065,.018);drop.userData.side=side;drop.userData.index=i;}
+    }else{box(body,metal,-.17,1.92,.29,.05,.13,.025);box(body,metal,-.17,1.98,.29,.12,.035,.025);}
     box(body,glove,.28,1.28,.1,.13,.15,.08);
   }else{
     const wood=material(0x634431,.18,.84);wood.map=getPatina().rust;
@@ -62,5 +67,5 @@ export function createCompetitor(kind){
     for(const side of [-1,1]){box(body,metal,side*.88,.75,.1,.15,.2,.3);const cable=new THREE.Mesh(new THREE.TorusGeometry(.16,.025,6,16,Math.PI*1.4),eye);cable.position.set(side*.85,.63,.4);body.add(cable);}
   }
   batchMeshes(body);
-  return {root,body,lid,screen,tongue,tears,monitor,update(dt,t=null){this.time=t??((this.time??0)+dt);body.position.y=.006+Math.sin(this.time*1.8)*.006;if(lid){const close=THREE.MathUtils.smoothstep(this.time,27,27.8);lid.rotation.x=(-1.13+Math.sin(this.time*1.4)*.025)*(1-close)-.04*close;tongue.scale.y=1-close*.7;tongue.position.y=1.02-close*.025;screen.visible=close<.7;monitor.position.y=-.8*close;tears.visible=this.time>=27.8&&this.time<31;tears.children.forEach((drop,n)=>{const u=(((this.time-27.8)*1.4+n/7)%1+1)%1,side=n%2?1:-1;drop.position.set(side*(.45+u*.55),1.2+u*1.35-u*u*.45,.65);});if(tears.visible)lid.rotation.x+=Math.sin(this.time*29)*.04;body.rotation.z=tears.visible?Math.sin(this.time*35)*.025:0;}}};
+  return {root,body,lid,screen,tongue,tears,monitor,update(dt,t=null){this.time=t??((this.time??0)+dt);body.position.y=.006+Math.sin(this.time*1.8)*.006;if(kind==='mario'){body.rotation.z=Math.sin(this.time*7)*.025;tears.children.forEach(drop=>{drop.position.y=1.48-((this.time*.25+drop.userData.index*.1)% .3);});}if(lid){const close=THREE.MathUtils.smoothstep(this.time,27,27.8);lid.rotation.x=(-1.13+Math.sin(this.time*1.4)*.025)*(1-close)-.04*close;tongue.scale.y=1-close*.7;tongue.position.y=1.02-close*.025;screen.visible=close<.7;monitor.position.y=-.8*close;tears.visible=this.time>=27.8&&this.time<31;tears.children.forEach((drop,n)=>{const u=(((this.time-27.8)*1.4+n/7)%1+1)%1,side=n%2?1:-1;drop.position.set(side*(.45+u*.55),1.2+u*1.35-u*u*.45,.65);});if(tears.visible)lid.rotation.x+=Math.sin(this.time*29)*.04;body.rotation.z=tears.visible?Math.sin(this.time*35)*.025:0;}}};
 }

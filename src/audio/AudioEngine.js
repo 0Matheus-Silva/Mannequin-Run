@@ -4,6 +4,7 @@ const PRESETS = [
   { bass:43.65, filter:420, notes:[174.61,207.65,261.63,311.13], noise:.055 },
   { bass:51.91, filter:1100, notes:[207.65,246.94,311.13,369.99], noise:.035 },
   { bass:49, filter:560, notes:[196,233.08,293.66,349.23], noise:.045 },
+  { bass:46, filter:690, notes:[185,220,277,330], noise:.035 },
 ];
 
 // All audio assets and synthesis are local. Context creation requires a gesture.
@@ -65,12 +66,52 @@ export class AudioEngine {
   }
   async loadAwardSounds(){
     if(this.awardLoading)return this.awardLoading;
-    this.awardLoading=Promise.allSettled(['explosion','chest-tongue','victory'].map(async name=>{const response=await fetch(new URL('../../assets/audio/ceremony/'+name+'.wav',import.meta.url));if(!response.ok)throw Error('Local audio unavailable');const buffer=await this.context.decodeAudioData(await response.arrayBuffer());this.awardBuffers.set(name,buffer);}));
+    this.awardLoading=Promise.allSettled(['explosion','victory','nexus-servidor','nexus-servidor-pecas','nexus-ponte-1','nexus-ponte-2','nexus-cratera-1','nexus-cratera-2','nexus-tropeco-1','nexus-tropeco-2','nexus-quase-1','nexus-quase-2','nexus-vitoria-1','nexus-setor-2','nexus-setor-3','nexus-setor-4','nexus-lava','nexus-premonicao','nexus-derrota-1','nexus-derrota-matheus','nexus-derrota-pedro','nexus-derrota-vitor'].map(async name=>{const folder=name.startsWith('nexus-')?'../../assets/audio/':'../../assets/audio/ceremony/';const response=await fetch(new URL(folder+name+'.wav',import.meta.url));if(!response.ok)throw Error('Local audio unavailable');const buffer=await this.context.decodeAudioData(await response.arrayBuffer());this.awardBuffers.set(name,buffer);}));
     return this.awardLoading;
   }
   awardClip(name,volume=1){
     const ctx=this.context,buffer=this.awardBuffers.get(name);if(!ctx||!buffer||!this.enabled||ctx.state!=='running'||this.voices.size>=12)return false;
     const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=buffer;gain.gain.value=volume;source.connect(gain);gain.connect(this.effectsBus);this.voices.add(source);source.onended=()=>{source.disconnect();gain.disconnect();this.voices.delete(source);};source.start();return true;
+  }
+  resetNexusQueue(){this.nexusQueue=[];}
+  resetNexusHistory(){this.nexusHistory=new Map();this.nexusVariants={};}
+  nexusMayPlay(name){const entry=this.nexusHistory?.get(name);return !entry||(entry.count<2&&!entry.sectors.has(this.sector));}
+  recordNexusLine(name){
+    this.nexusHistory??=new Map();let entry=this.nexusHistory.get(name);
+    if(!entry){entry={count:0,sectors:new Set()};this.nexusHistory.set(name,entry);}
+    entry.count++;entry.sectors.add(this.sector);
+  }
+  playNexusReaction(name){
+    if(!this.playing||!this.enabled||!this.context||this.context.state!=='running'||this.nexusQueue?.length||this.context.currentTime<(this.nexusVoiceUntil??0)||!this.nexusMayPlay(name))return false;
+    const buffer=this.awardBuffers.get(name);if(!buffer||!this.awardClip(name,.9))return false;
+    this.recordNexusLine(name);this.nexusVoiceUntil=this.context.currentTime+buffer.duration+3;return true;
+  }
+  queueNexusLine(name){
+    if(!this.enabled||!this.context||this.context.state!=='running'||!this.awardBuffers.has(name)||!this.nexusMayPlay(name))return false;
+    // Reactions are relevant only at the instant they happen; never queue them.
+    if(name==='nexus-lava'){
+      return this.playNexusReaction(name);
+    }
+    // Keep only the latest narrative cue, so a sector announcement takes priority.
+    const sectorCue=value=>value?.startsWith('nexus-setor-')||value?.startsWith('nexus-ponte-');
+    if(sectorCue(this.nexusQueue?.[0])&&!sectorCue(name))return false;
+    this.nexusQueue=[name];this.flushNexusQueue();return true;
+  }
+  flushNexusQueue(){
+    if((!this.playing&&!this.nexusQueue?.[0]?.startsWith('nexus-derrota-'))||!this.enabled||!this.context||this.context.state!=='running'||!this.nexusQueue?.length||this.context.currentTime<(this.nexusVoiceUntil??0))return;
+    const name=this.nexusQueue[0],buffer=this.awardBuffers.get(name);if(!buffer||!this.nexusMayPlay(name)){this.nexusQueue.shift();return;}
+    if(this.awardClip(name,.9)){this.nexusQueue.shift();this.recordNexusLine(name);this.nexusVoiceUntil=this.context.currentTime+buffer.duration+3;}
+  }
+  playNexusCue(kind){
+    if(!['cratera','tropeco','quase','vitoria'].includes(kind)||!this.enabled||!this.context||this.context.state!=='running')return false;
+    const now=this.context.currentTime;if(now<(this.nexusVoiceUntil??0)||this.nexusQueue?.length)return false;
+    this.nexusVariants??={};const count=kind==='vitoria'?1:2,start=this.nexusVariants[kind]??0;
+    for(let i=0;i<count;i++){
+      const variant=(start+i)%count+1,name='nexus-'+kind+'-'+variant,buffer=this.awardBuffers.get(name);
+      if(!buffer||!this.nexusMayPlay(name))continue;
+      if(!this.awardClip(name,.9))return false;this.nexusVariants[kind]=variant;this.recordNexusLine(name);this.nexusVoiceUntil=now+buffer.duration+3;return true;
+    }
+    return false;
   }
   setCeremonyDucking(time){
     const duck=time!==null&&time>=27.65&&time<31.2?.24:time!==null&&time>=25.5&&time<26.7?.5:1;
@@ -122,7 +163,9 @@ export class AudioEngine {
     }
   }
   update() {
-    const ctx=this.context;if(!ctx||!this.enabled||!this.playing||ctx.state!=='running')return;
+    const ctx=this.context;if(!ctx||!this.enabled||ctx.state!=='running')return;
+    this.flushNexusQueue();
+    if(!this.playing)return;
     if(ctx.currentTime>=this.nextBeat&&this.musicEnabled&&!this.externalMusicPlaying&&!this.localAudio){
       const track=MUSIC_TRACKS.find(t=>t.id===this.track)??MUSIC_TRACKS[0];const note=track.notes[this.beat++%track.notes.length];
       this.tone(note,note*.999,1.1,.085,'sine',0,'music');this.tone(note*2,note*2,.7,.016,'triangle',.06,'music');

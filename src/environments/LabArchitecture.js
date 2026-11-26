@@ -34,7 +34,7 @@ export function buildLaboratory(w,index){
       for(const z of [-3,-11])box(w.trim,side*(5.4+p*.4),6.9+p*.25,z,.32,.32,.12);
     }
     for(let bay=0;bay<2;bay++){
-      const z=-4-bay*8;const variant=(index+bay+(side>0?1:0))%3;
+      const z=-4-bay*8;const variant=Math.floor(random()*5);
       if(variant===0){
         box(w.dark,side*6.9,1.6,z,1.55,3.2,2.8);
         box(w.metal,side*6.04,1.65,z,.12,3.1,2.65);
@@ -52,7 +52,7 @@ export function buildLaboratory(w,index){
         box(w.dark,side*6.1,1.27,z-.7,.6,.06,.7);
         for(let n=0;n<3;n++)round(w.trim,side*6.6,1.45,z-.9+n*.8,.1,.6,.1);
         box(w.amber,side*7.2,2.9,z,.25,.06,.18);
-      }else{
+      }else if(variant===2){
         round(w.dark,side*6.8,.3,z,.85,.4,.85);
         round(w.glass,side*6.8,1.95,z,.73,2.9,.73);
         for(const y of [.45,3.45])round(w.trim,side*6.8,y,z,.86,.18,.86);
@@ -60,6 +60,14 @@ export function buildLaboratory(w,index){
         box(w.light,side*6,1.9,z,.04,1.7,.09);
         round(w.dark,side*6.8,1.7,z,.3,1.6,.3);
         box(w.screen,side*5.93,1.4,z,.05,.45,.6);
+      }else if(variant===3){
+        box(w.dark,side*6.8,1.65,z,1.4,3.3,3.4);
+        for(let n=0;n<3;n++){box(w.metal,side*6.05,.65+n*.95,z,.18,.75,2.9);box(w.screen,side*5.94,.7+n*.95,z,.03,.35,2.1);}
+        box(w.amber,side*5.9,2.75,z,.05,.12,1.6);
+      }else{
+        box(w.metal,side*7.1,.6,z,2.4,1.2,3.4);
+        for(let n=0;n<3;n++){const crate=box(n===1?w.trim:w.dark,side*(6.5+n*.48),1.45,z+(n-1)*.8,.72,.65,.7);crate.rotation.y=(random()-.5)*.4;}
+        const screen=box(w.screen,side*6.15,2.35,z,.08,1,1.4);screen.rotation.z=side*.2;
       }
     }
     // Irregular service panels, broken covers and exposed warm wiring.

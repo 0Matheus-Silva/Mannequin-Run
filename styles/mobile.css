@@ -58,3 +58,5 @@
 .mobile #award-win{font-size:36px;top:130px}.mobile #ending-caption{font-size:16px;left:16px;right:16px;width:auto}
 .mobile #error{inset:100px 16px;padding:20px;font-size:16px}
 @media(max-height:500px){.mobile .menu{inset:36px 0 75px;padding-right:45%;}.mobile h1{font-size:36px;margin:8px 0}.mobile h1 span{font-size:54px}.mobile h1 em{display:none}.mobile .intro{font-size:14px}.mobile #assistant-open{bottom:80px}.mobile footer #status{display:none}.mobile .control-hint{bottom:10px}}
+.mobile #rescue-hud{top:155px;right:10px;padding:8px;font-size:11px}.mobile #rescue-hud span{font-size:9px}.mobile #rescue-fire{min-height:44px}
+.mobile #rescue-instruction{width:calc(100% - 32px);padding:14px;font-size:13px}.mobile #rescue-instruction strong{font-size:11px}

@@ -44,7 +44,7 @@ export class Store {
       await c.execute('UPDATE players SET last_active_at=UTC_TIMESTAMP(3) WHERE id=?',[v.playerId]);
       if (!v.practice) {
         const eligible = ['crashed','completed'].includes(v.result), completed = v.result === 'completed';
-        const storyDistance = v.mode === 'story' ? Math.floor(Math.min(v.distance,2400)) : 0;
+        const storyDistance = v.mode === 'story' ? Math.floor(Math.min(v.distance,3000)) : 0;
         await c.execute(`UPDATE progress SET story_distance=GREATEST(story_distance,?),last_checkpoint=GREATEST(last_checkpoint,?),
           unlocked_sectors=GREATEST(unlocked_sectors,?),best_score=GREATEST(best_score,?),best_infinite=GREATEST(best_infinite,?),
           best_story=GREATEST(best_story,?),max_distance=GREATEST(max_distance,?),story_completed=GREATEST(story_completed,?),updated_at=UTC_TIMESTAMP(3) WHERE player_id=?`,

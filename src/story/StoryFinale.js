@@ -35,7 +35,7 @@ export class StoryFinale{
     const mat=(color,roughness=.7,metalness=.1)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
     this.white=mat(0xe1dfd0);this.paving=mat(0x8b938d);this.blue=mat(0x155288);this.green=mat(0x55a64a);this.glass=mat(0x6d9d9d,.25,.5);this.dark=mat(0x263a3b);this.wood=mat(0x78513b);this.purple=mat(0x322b4a);this.gold=mat(0xeac26c,.27,.75);
     this.buildCampus();this.buildAuditorium();
-    this.others=[createCompetitor('monitor-chest'),createPlasmaProject()];
+    this.others=[createCompetitor('mario'),createPlasmaProject()];
     this.others.forEach(bot=>this.root.add(bot.root));
     this.trophy=this.makeTrophy();this.root.add(this.trophy);
     batchMeshes(this.campus);batchMeshes(this.hall);batchMeshes(this.auditorium);
@@ -93,14 +93,14 @@ export class StoryFinale{
     this.creditElapsed=-CREDITS_START;this.creditsManual=false;this.creditsFinished=false;this.soundCues=new Set();
     this.game.camera.far=420;this.game.camera.updateProjectionMatrix();
     this.elapsed=0;this.done=false;this.cheered=false;this.root.visible=true;this.root.position.set(0,0,0);
-    this.initialFog=this.game.scene.fog.color.clone();this.initialFogDensity=this.game.scene.fog.density;this.startCamera=this.game.camera.position.clone();this.startTarget=this.game.target.clone();this.arrivalSpeed=this.game.session.speed;this.startX=this.game.motion.x;this.startY=this.game.motion.y;this.game.player.resetPose();this.game.track.reset();this.game.passages.reset();this.game.motion.reset();this.trophy.visible=false;
+    this.initialFog=this.game.scene.fog.color.clone();this.initialFogDensity=this.game.scene.fog.density;this.startCamera=this.game.camera.position.clone();this.startTarget=this.game.target.clone();this.arrivalSpeed=this.game.session.speed;this.startX=this.game.motion.x;this.startY=this.game.motion.y;this.game.track.reset();this.game.passages.reset();this.game.motion.reset();this.trophy.visible=false;
   }
   reset(){this.root.visible=false;this.trophy.visible=false;this.elapsed=0;this.done=false;this.game.camera.far=180;this.game.camera.updateProjectionMatrix();this.game.world.segments.forEach(s=>{s.visible=true;for(const [node,visible] of s.userData.approachHidden??[])node.visible=visible;delete s.userData.approachHidden;});}
   preview(distance){
     this.root.visible=true;this.campus.visible=true;this.hall.visible=true;this.auditorium.visible=false;this.others.forEach(bot=>bot.root.visible=false);this.trophy.visible=false;
-    this.root.position.z=distance-2400;this.updateEntrance(105-this.root.position.z);
+    this.root.position.z=distance-3000;this.updateEntrance(105-this.root.position.z);
     this.game.camera.far=420;this.game.camera.updateProjectionMatrix();
-    const blend=THREE.MathUtils.smoothstep(distance,2220,2300);this.game.scene.fog.density=THREE.MathUtils.lerp(this.game.scene.fog.density,.003,blend);
+    const blend=THREE.MathUtils.smoothstep(distance,2820,2900);this.game.scene.fog.density=THREE.MathUtils.lerp(this.game.scene.fog.density,.003,blend);
     this.daylight(blend);
     this.trimStreet();
   }
@@ -123,7 +123,7 @@ export class StoryFinale{
   seek(time){this.elapsed=Math.min(ENDING_DURATION,Math.max(0,time));this.creditElapsed=time-CREDITS_START;this.done=time>=ENDING_DURATION;if(this.done)this.game.setState('victory');}
   get walking(){return this.elapsed<podiumTiming(this.arrivalSpeed).stairs;}
   advance(dt){
-    const previous=this.elapsed,landed=podiumTiming(this.arrivalSpeed).end,before=arrivalTravel(previous,this.arrivalSpeed),rate=1.4;
+    const previous=this.elapsed,landed=podiumTiming(this.arrivalSpeed).end,rate=1.4;
     let next=previous+dt*(previous>=21?rate:1);
     // Begin the presentations immediately after the landing, without a timed hold.
     if(previous<21&&next>=landed)next=21+(next-landed)*rate;
@@ -131,8 +131,7 @@ export class StoryFinale{
     if(this.creditsManual||previous>=CREDITS_START)this.creditElapsed+=dt;
     else this.creditElapsed=this.elapsed<CREDITS_START?this.elapsed-CREDITS_START:(next-CREDITS_START)/rate;
     if(Math.abs(this.creditElapsed)<1e-8)this.creditElapsed=0;
-    const after=arrivalTravel(this.elapsed,this.arrivalSpeed);
-    if(after>before&&dt>0)this.game.world.update(dt,(after-before)/dt,2400+after);
+    // The old world is hidden during the finale; avoid recycling geometry on its first frames.
     if(this.elapsed>=ENDING_DURATION&&!this.done){this.done=true;this.game.setState('victory');}
     if(this.done&&!this.creditsFinished&&(!this.game.settings.credits||this.creditElapsed>=CREDITS_DURATION)){
       this.creditsFinished=true;this.game.events.dispatchEvent(new CustomEvent('creditsfinished'));
@@ -169,7 +168,7 @@ export class StoryFinale{
     this.others[0].update(dt,t);this.others[1].update(t);
     this.others.forEach((bot,i)=>bot.root.position.set(i?4.4:-4.4,i?1.31:1.56,-190));
     if(t>=22&&t<25.5){const cue='charge-'+Math.floor((t-22)*4);if(!this.soundCues.has(cue)){this.soundCues.add(cue);g.audio.effect('plasma-charge',(t-22)/3.5);}}
-    for(const [name,from,to] of [['plasma-burst',25.5,26.4],['tongue-yelp',27.65,28.4]])if(t>=from&&t<to&&!this.soundCues.has(name)){this.soundCues.add(name);g.audio.effect(name);}
+    for(const [name,from,to] of [['plasma-burst',25.5,26.4]])if(t>=from&&t<to&&!this.soundCues.has(name)){this.soundCues.add(name);g.audio.effect(name);}
     const lift=THREE.MathUtils.smoothstep(t,32,34);
     this.trophy.visible=t>=32;
     if(t>=32){
@@ -182,7 +181,7 @@ export class StoryFinale{
     g.ui.ending(phase,t);
     document.querySelector('#award-win').hidden=t<34;
     this.winnerScreen.visible=t>=34;this.winnerLight.intensity=12*THREE.MathUtils.smoothstep(t,32,34);
-    if(t>=34&&!this.soundCues.has('victory')){this.soundCues.add('victory');g.audio.effect('victory');}
+    if(t>=34&&!this.soundCues.has('victory')){this.soundCues.add('victory');g.audio.effect('victory');g.audio.queueNexusLine('nexus-vitoria-1');}
     g.ui.credits(this.creditElapsed,g.settings.credits||this.creditsManual);
   }
 }

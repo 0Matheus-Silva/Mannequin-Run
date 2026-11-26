@@ -30,14 +30,19 @@ export function buildPhysicalRig(rig){
   for(const side of [-1,1]){
     const panel=new THREE.Shape();panel.moveTo(side*.18,.45);panel.lineTo(side*.36,.43);panel.quadraticCurveTo(side*.46,.35,side*.43,.12);panel.lineTo(side*.39,-.56);panel.lineTo(side*.21,-.55);panel.lineTo(side*.18,.12);panel.closePath();
     const coat=new THREE.Mesh(new THREE.ExtrudeGeometry(panel,{depth:.25,bevelEnabled:true,bevelSize:.035,bevelThickness:.025,bevelSegments:3,curveSegments:12}),rig.graphite);coat.position.z=-.15;coat.castShadow=true;rig.torso.add(coat);
-    const lapel=box(rig.torso,rig.graphite,side*.285,.19,-.205,.14,.64,.055);lapel.rotation.z=side*-.1;
+    const lapel=oval(rig.torso,rig.graphite,side*.285,.13,-.205,.073,.37,.042);lapel.rotation.z=side*-.1;
     box(rig.torso,seams,side*.225,-.03,-.242,.018,.65,.016);
     for(let n=0;n<18;n++)box(rig.torso,rig.chrome,side*.225,-.32+n*.033,-.254,.012,.012,.008);
     tube(rig.torso,seams,[[side*.35,-.32,-.19],[side*.38,-.14,-.2],[side*.36,-.05,-.21]],.005);
     tube(rig.torso,rig.dark,[[side*.2,.48,-.13],[side*.23,.28,-.25],[side*.23,.12,-.25]],.009);
   }
-  box(rig.torso,rig.graphite,0,.1,.16,.47,.69,.1);
-  box(rig.torso,rig.graphite,0,-.04,.155,.62,.96,.09);
+  // Curved fabric follows the shoulders and tapers towards the waist.
+  oval(rig.torso,rig.graphite,0,-.015,.115,.345,.49,.16);
+  oval(rig.torso,rig.graphite,0,.29,.105,.37,.19,.15);
+  for(const side of [-1,1]){
+    tube(rig.torso,seams,[[side*.06,.43,.235],[side*.25,.37,.235],[side*.34,.25,.19]],.005);
+    tube(rig.torso,seams,[[side*.31,.18,.21],[side*.29,-.12,.245],[side*.25,-.4,.205]],.004);
+  }
   rig.hardware=group(rig.torso,0,.055,-.17);rig.hardware.userData.kind='open-computer';rig.hardware.scale.set(1.15,1.02,1);
   const board=new THREE.MeshStandardMaterial({color:0x102c1a,emissive:0x06400c,emissiveIntensity:.22,roughness:.68,metalness:.3});
   const innerMetal=new THREE.MeshStandardMaterial({color:0x263138,metalness:.65,roughness:.48});
@@ -74,17 +79,20 @@ export function buildPhysicalRig(rig){
   for(const side of [-1,1])box(rear,rig.graphite,side*.2,0,0,.07,.55,.07);
   rig.neck=group(rig.body,0,2.06,0);oval(rig.neck,rig.metal,0,-.015,0,.12,.18,.115);
   rig.head=group(rig.neck,0,.2,0);rig.hood=group(rig.head,0,0,0);
-  const hood=new THREE.Mesh(new THREE.SphereGeometry(1,28,18,0,Math.PI),rig.graphite);hood.scale.set(.32,.345,.3);hood.position.set(0,.02,.005);rig.hood.add(hood);
-  // Layered fabric at the back and neck gives the hood a draped silhouette.
-  const hoodBack=oval(rig.hood,rig.graphite,0,-.18,.13,.295,.23,.19);hoodBack.rotation.x=-.25;
-  const hoodDrape=oval(rig.hood,rig.graphite,0,-.32,.09,.26,.16,.2);hoodDrape.rotation.x=-.35;
-  for(const side of [-1,1]){
-    tube(rig.hood,seams,[[side*.07,.27,.19],[side*.12,.08,.29],[side*.17,-.12,.27],[side*.2,-.28,.17]],.006);
-    tube(rig.hood,rig.dark,[[side*.23,.04,.19],[side*.27,-.1,.16],[side*.24,-.24,.1]],.008);
-    tube(rig.hood,seams,[[side*.03,-.17,.31],[side*.1,-.28,.26],[side*.19,-.37,.14]],.005);
+  // Continuous cloth shell: rounded crown widening gently into the jacket collar.
+  const rings=[[-.40,.35,.14,.035],[-.31,.32,.20,.025],[-.19,.30,.27,.005],[0,.31,.30,0],[.17,.285,.27,0],[.28,.22,.21,0],[.35,.11,.11,0],[.37,.005,.005,0]];
+  const vertices=[],indices=[],segments=24;
+  for(const [y,width,depth,offset] of rings)for(let n=0;n<=segments;n++){
+    const angle=Math.PI*n/segments;vertices.push(Math.cos(angle)*width,y,offset+Math.sin(angle)*depth);
   }
-  tube(rig.hood,rig.graphite,[[-.22,-.24,-.17],[-.29,.02,-.13],[-.22,.26,-.12],[0,.34,-.1],[.22,.26,-.12],[.29,.02,-.13],[.22,-.24,-.17]],.018);
-  for(const side of [-1,1])oval(rig.hood,rig.graphite,side*.26,-.08,.025,.075,.25,.19);
+  for(let row=0;row<rings.length-1;row++)for(let n=0;n<segments;n++){
+    const i=row*(segments+1)+n,j=i+segments+1;indices.push(i,j,i+1,i+1,j,j+1);
+  }
+  const hoodGeometry=new THREE.BufferGeometry();hoodGeometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));hoodGeometry.setIndex(indices);hoodGeometry.computeVertexNormals();
+  const hood=new THREE.Mesh(hoodGeometry,rig.graphite);hood.castShadow=true;hood.receiveShadow=true;rig.hood.add(hood);
+  tube(rig.hood,rig.graphite,[[-.31,-.32,0],[-.31,-.05,0],[-.25,.23,0],[0,.37,0],[.25,.23,0],[.31,-.05,0],[.31,-.32,0]],.014);
+  // An opaque inner head closes the opening between the hood and the visor.
+  oval(rig.head,rig.dark,0,-.012,-.015,.235,.29,.16);
   rig.mask=group(rig.head,0,0,-.16);rig.mask.userData.kind='cyan-segmented-mask';oval(rig.mask,rig.visor,0,0,0,.225,.275,.09);
   const face=(points)=>tube(rig.mask,rig.glow,points.map(([x,y])=>[-x,y,-.087-Math.max(0,1-Math.abs(x)/.25)*.008]),.0045);
   for(const side of [-1,1]){
