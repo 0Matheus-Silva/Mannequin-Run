@@ -10,7 +10,7 @@
     "db:migrate": "node tools/database.js migrate",
     "db:backup": "node tools/database.js backup",
     "db:export": "node tools/database.js export",
-    "test": "node --test tests/persistence.test.js tests/gamepad.test.js tests/slide-pickups.test.js tests/pit.test.js tests/chasm-obstacles.test.js tests/collectible-routes.test.js tests/arrival-fog.test.js tests/sector-five.test.js tests/nexus-game-voice.test.js tests/near-miss.test.js tests/assistant-content.test.js tests/voice-output.test.js",
+    "test": "node --test tests/persistence.test.js tests/gamepad.test.js tests/slide-pickups.test.js tests/pit.test.js tests/chasm-obstacles.test.js tests/collectible-routes.test.js tests/arrival-fog.test.js tests/sector-five.test.js tests/nexus-game-voice.test.js tests/defeat-voice.test.js tests/near-miss.test.js tests/assistant-content.test.js tests/voice-output.test.js",
     "test:mysql": "node --test --test-concurrency=1 tests/mysql.integration.test.js tests/backup.integration.test.js"
   },
   "dependencies": { "mysql2": "^3.15.3" }

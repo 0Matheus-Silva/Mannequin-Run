@@ -11,6 +11,7 @@ import { SwipeInput } from './SwipeInput.js';
 import { TrackObjects } from '../obstacles/TrackObjects.js';
 import { ElevatedRoute,routeHeight,crossesEntrance,routeSpawnAllowed } from '../environments/ElevatedRoute.js';
 import { arrivalFogOpacity } from '../story/ArrivalFog.js';
+import { chooseDefeatVoice } from './DefeatVoice.js';
 import { fatalCollision } from '../obstacles/Collision.js';
 import { Records, RunSession } from './RunSession.js';
 import { AudioEngine } from '../audio/AudioEngine.js';
@@ -195,7 +196,7 @@ export class Game {
   crash(cause='obstacle') {
     if (this.state !== 'playing') return;
     if(cause==='chasm')this.audio.playNexusCue('cratera');
-    else {this.audio.resetNexusQueue();const choices=['nexus-derrota-1','nexus-derrota-1','nexus-derrota-1','nexus-derrota-matheus','nexus-derrota-pedro','nexus-derrota-vitor'];this.audio.queueNexusLine(choices[Math.floor(Math.random()*choices.length)]);}
+    else {this.audio.resetNexusQueue();const line=chooseDefeatVoice(this.lastDefeatVoice);if(this.audio.queueNexusLine(line))this.lastDefeatVoice=line;}
     this.fallCause=cause;this.session.finish();this.fallElapsed=0;this.player.impactTime=0;if(cause!=='chasm'){this.effects.burst(this.motion.x,1,0,true);this.audio.effect('crash');this.ui.hit();}this.setState('falling');
     this.events.dispatchEvent(new CustomEvent('runfinish',{detail:{result:'crashed'}}));
   }
