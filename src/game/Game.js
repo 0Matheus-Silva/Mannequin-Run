@@ -308,8 +308,8 @@ export class Game {
     if(ending)this.finale.present(animationDt);
     const fogState=this.state==='paused'?this.resumeState:this.state;
     const turnDistance=((this.session.distance%3000)+3000)%3000;
-    const showRescueNotice=this.session.mode==='story'&&running&&turnDistance>=2310&&turnDistance<2420;
-    document.querySelector('#rescue-instruction').hidden=true;
+    const showRescueNotice=this.session.mode==='story'&&running&&turnDistance>=2310&&turnDistance<2380;
+    document.querySelector('#rescue-instruction').hidden=!showRescueNotice;
     if(showRescueNotice&&!this.rescueVoicePlayed){
       this.rescueVoicePlayed=true;const epoch=this.rescueVoiceEpoch;
       if(this.audio.context&&this.audio.enabled)setTimeout(()=>{if(this.state==='playing'&&this.rescueVoiceEpoch===epoch&&this.session.distance<2470)void this.audio.loadAwardSounds().then(()=>{if(this.state==='playing'&&this.rescueVoiceEpoch===epoch&&this.session.distance<2470)this.audio.queueNexusLine('nexus-servidor');});},650);
